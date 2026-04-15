@@ -699,6 +699,12 @@
                 <option value="4">4회차</option><option value="5">5회차</option><option value="6">6회차</option><option value="7">7회차</option>
             </select>
         </div>
+        <div class="filter-item">
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;font-weight:bold;color:var(--danger);">
+                <input type="checkbox" id="filterUnassigned" onchange="renderTotalList()" style="width:16px;height:16px;cursor:pointer;accent-color:var(--danger);">
+                미배정만 보기
+            </label>
+        </div>
         <div class="filter-item" style="flex:1;justify-content:flex-end;"><label>검색</label>
             <input type="text" id="filterKeyword" placeholder="이름 또는 연락처 검색" onkeyup="renderTotalList()" style="width:200px;">
         </div>
@@ -855,6 +861,10 @@
             </select>
             <input type="text" id="mob-filterKeyword" placeholder="이름/연락처 검색" onkeyup="renderTotalList()" style="flex:1;padding:8px;border:1px solid var(--border);border-radius:6px;font-size:13px;">
         </div>
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:bold;color:var(--danger);padding:8px 0;">
+            <input type="checkbox" id="mob-filterUnassigned" onchange="renderMobileTotalList()" style="width:18px;height:18px;cursor:pointer;accent-color:var(--danger);">
+            미배정만 보기
+        </label>
         <div class="res-list" id="mob-totalList"></div>
     </div>
 </div>
@@ -1483,12 +1493,15 @@
 
     window.renderTotalList = function() {
         const fs=document.getElementById('filterShowtime').value, fk=document.getElementById('filterKeyword').value.trim().toLowerCase();
+        const fuEl=document.getElementById('filterUnassigned');
+        const fu = fuEl ? fuEl.checked : false;
         const tbody=document.getElementById('totalListTbody'); tbody.innerHTML=''; let has=false;
         for(let show=1;show<=7;show++){
             if(fs!=='all'&&parseInt(fs)!==show) continue;
             const groups=buildGroups(String(show));
             groups.forEach(g=>{
                 if(fk&&!g.name.toLowerCase().includes(fk)&&!g.phone.includes(fk)) return;
+                if(fu && g.pending===0) return;
                 has=true;
                 const tr=document.createElement('tr');
                 let sh=g.seats.length>0?'<div class="seat-badge-container">'+g.seats.map(s=>`<button class="seat-check-btn ${s.pickedUp?'is-checked':''}" onclick="toggleCheckInFromList('${s.id}')">${s.label2}</button>`).join('')+'</div>':'<span style="color:var(--text3)">미배정</span>';
