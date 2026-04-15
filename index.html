@@ -335,11 +335,13 @@
             .logout-btn { font-size: 11px; padding: 4px 10px; }
             .top-tabs { padding: 0 8px; gap: 0; }
             .top-tab { padding: 10px 10px; font-size: 12px; }
-            .page { height: calc(100vh - 120px); }
-            #page-list, #page-dash, #page-wait { padding: 12px; }
-            #page-main { flex-direction: column; overflow-y: auto; }
-            .sidebar { width: 100%; min-width: unset; border-right: none; border-bottom: 1px solid var(--border); max-height: 420px; }
-            .main { padding: 12px; gap: 12px; overflow-y: visible; }
+            .page { height: auto; overflow: visible; }
+            .page.active { display: flex; }
+            #page-list, #page-dash, #page-wait { padding: 12px; display: flex; max-height: calc(100vh - 120px); overflow-y: auto; }
+            #page-main { flex-direction: column; overflow-y: auto; max-height: calc(100vh - 120px); }
+            .sidebar { width: 100%; min-width: unset; border-right: none; border-bottom: 1px solid var(--border); max-height: none; overflow: visible; flex-shrink: 0; }
+            .sidebar-content { max-height: 320px; overflow-y: auto; }
+            .main { padding: 12px; gap: 12px; overflow-y: auto; }
             .stats-row { grid-template-columns: repeat(2, 1fr); gap: 6px; }
             .stat-val { font-size: 15px; }
             .stat-label { font-size: 10px; }
