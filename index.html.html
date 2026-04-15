@@ -1,0 +1,1131 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2026 빛의 여로 예매 관리 시스템</title>
+    <style>
+        * { box-sizing: border-box; }
+        :root {
+            --primary: #2A4D95;
+            --primary-dark: #1A3263;
+            --primary-light: #4A6BAF;
+            --surface: #ffffff;
+            --surface2: #f4f7f6;
+            --border: #ddd;
+            --success: #27ae60;
+            --danger: #e74c3c;
+            --accent: #f39c12;
+            --vip: #8e24aa;
+            --staff: #f57c00;
+            --radius: 8px;
+            --seat-checked: #9e9e9e;
+            --seat-checked-border: #616161;
+            --text: #333;
+            --text2: #555;
+            --text3: #888;
+            --bg: #ffffff;
+            --seat-empty: #f8f9fa;
+            --seat-empty-border: #ced4da;
+        }
+
+        body { margin: 0; padding: 0; font-family: 'Malgun Gothic', sans-serif; background: var(--surface2); color: var(--text); height: 100vh; overflow: hidden; }
+
+        /* ==========================================
+           🔐 로그인 화면
+        ========================================== */
+        #loginPage {
+            position: fixed;
+            inset: 0;
+            background: linear-gradient(135deg, #1A3263 0%, #2A4D95 50%, #4A6BAF 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        }
+        .login-box {
+            background: white;
+            border-radius: 20px;
+            padding: 48px 40px;
+            width: 100%;
+            max-width: 420px;
+            box-shadow: 0 30px 80px rgba(0,0,0,0.4);
+            text-align: center;
+        }
+        .login-logo {
+            width: 64px;
+            height: 64px;
+            background: var(--primary);
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 30px;
+            margin: 0 auto 20px;
+        }
+        .login-title {
+            font-size: 22px;
+            font-weight: 800;
+            color: var(--primary-dark);
+            margin-bottom: 6px;
+        }
+        .login-subtitle {
+            font-size: 13px;
+            color: var(--text3);
+            margin-bottom: 32px;
+        }
+        .login-field {
+            margin-bottom: 14px;
+            text-align: left;
+        }
+        .login-field label {
+            display: block;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--text2);
+            margin-bottom: 6px;
+        }
+        .login-field input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1.5px solid var(--border);
+            border-radius: 10px;
+            font-size: 14px;
+            font-family: inherit;
+            transition: border-color 0.2s;
+            outline: none;
+        }
+        .login-field input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(42,77,149,0.1);
+        }
+        .login-btn {
+            width: 100%;
+            padding: 13px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            margin-top: 8px;
+            transition: background 0.2s;
+            letter-spacing: 0.5px;
+        }
+        .login-btn:hover { background: var(--primary-light); }
+        .login-btn:disabled { background: #aaa; cursor: not-allowed; }
+        .login-error {
+            color: var(--danger);
+            font-size: 12px;
+            margin-top: 10px;
+            min-height: 18px;
+            font-weight: 600;
+        }
+        .login-spinner {
+            display: inline-block;
+            width: 16px; height: 16px;
+            border: 2px solid rgba(255,255,255,0.4);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+            vertical-align: middle;
+            margin-right: 6px;
+        }
+
+        /* ==========================================
+           🔥 앱 상단 배너 & 헤더
+        ========================================== */
+        #syncBanner {
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            height: 36px;
+            background: #e74c3c;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            font-weight: bold;
+            z-index: 9999;
+            transition: background 0.4s;
+        }
+        #syncBanner.connected { background: #27ae60; }
+        #syncBanner.syncing   { background: #f39c12; }
+
+        .header { background: var(--primary-dark); color: white; padding: 14px 24px; display: flex; align-items: center; justify-content: space-between; margin-top: 36px; }
+        .header-left { display: flex; align-items: center; gap: 15px; }
+        .header-title { font-size: 20px; font-weight: 700; letter-spacing: -0.5px; }
+        .header-badge { background: var(--accent); color: white; font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 20px; letter-spacing: 0.5px; white-space: nowrap; }
+        .header-right { display: flex; align-items: center; gap: 14px; }
+        .user-info { color: rgba(255,255,255,0.85); font-size: 12px; display: flex; align-items: center; gap: 6px; }
+        .user-dot { width: 8px; height: 8px; background: #2ecc71; border-radius: 50%; box-shadow: 0 0 6px #2ecc71; }
+        .logout-btn { background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.3); border-radius: 6px; padding: 5px 12px; font-size: 12px; font-weight: 600; cursor: pointer; transition: background 0.2s; }
+        .logout-btn:hover { background: rgba(255,255,255,0.25); }
+
+        #editableTitle { outline: none; border-bottom: 1px dashed rgba(255,255,255,0.4); cursor: text; padding-bottom: 2px; transition: all 0.2s; }
+        #editableTitle:focus, #editableTitle:hover { border-bottom: 1px dashed white; background: rgba(255,255,255,0.1); border-radius: 4px; }
+
+        /* ==========================================
+           탭 & 페이지
+        ========================================== */
+        .top-tabs { display: flex; background: var(--surface); border-bottom: 2px solid var(--border); padding: 0 24px; gap: 4px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); position: relative; z-index: 10; overflow-x: auto; }
+        .top-tab { padding: 12px 24px; font-size: 14px; font-weight: 700; cursor: pointer; color: var(--text3); border-bottom: 3px solid transparent; margin-bottom: -2px; background: none; border-left: none; border-right: none; border-top: none; white-space: nowrap; transition: all .2s; }
+        .top-tab:hover { color: var(--primary-light); }
+        .top-tab.active { color: var(--primary); border-bottom-color: var(--primary); cursor: default; }
+
+        .page { display: none; height: calc(100vh - 141px); overflow: hidden; }
+        .page.active { display: flex; }
+
+        /* ==========================================
+           사이드바
+        ========================================== */
+        .sidebar { width: 340px; min-width: 300px; background: var(--surface); border-right: 1px solid var(--border); display: flex; flex-direction: column; overflow: hidden; }
+        .main { flex: 1; overflow-y: auto; padding: 24px; display: flex; flex-direction: column; gap: 20px; }
+        .sidebar-header { padding: 18px 18px 14px; border-bottom: 1px solid var(--border); }
+        .sidebar-header h2 { font-size: 15px; font-weight: 700; color: var(--primary); margin: 0; }
+        .sidebar-tabs { display: flex; border-bottom: 1px solid var(--border); }
+        .sidebar-tab { flex: 1; padding: 10px; font-size: 13px; font-weight: 600; text-align: center; cursor: pointer; color: var(--text3); border-bottom: 2px solid transparent; transition: all .15s; background: none; border-left: none; border-right: none; border-top: none; }
+        .sidebar-tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+        .sidebar-content { flex: 1; overflow-y: auto; padding: 14px; }
+
+        /* ==========================================
+           통계 & 폼
+        ========================================== */
+        .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 14px; }
+        .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 10px 12px; text-align: center; }
+        .stat-label { font-size: 11px; color: var(--text3); margin-bottom: 4px; }
+        .stat-val { font-size: 18px; font-weight: 700; }
+        .stat-val.blue { color: var(--primary); }
+        .stat-val.amber { color: var(--accent); }
+        .stat-val.green { color: var(--success); }
+
+        .form-section { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; margin-bottom: 12px; }
+        .form-row { margin-bottom: 8px; }
+        .form-row label { display: block; font-size: 11px; color: var(--text2); margin-bottom: 3px; font-weight: 600; }
+        .form-row input, .form-row select { width: 100%; padding: 7px 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 13px; font-family: inherit; background: var(--bg); color: var(--text); transition: border-color .15s; }
+        .form-row input:focus, .form-row select:focus { outline: none; border-color: var(--primary); }
+        .form-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+
+        /* ==========================================
+           버튼
+        ========================================== */
+        .btn-primary { width: 100%; padding: 10px; background: var(--primary); color: white; border: none; border-radius: var(--radius); font-size: 13px; font-weight: 700; cursor: pointer; transition: background .15s; }
+        .btn-primary:hover { background: var(--primary-light); }
+        .btn-danger { background: var(--danger); } .btn-danger:hover { background: #9B1F1F; }
+        .btn-sm { padding: 5px 10px; font-size: 11px; font-weight: 700; border-radius: 5px; border: none; cursor: pointer; transition: all .15s; }
+        .btn-sm-blue { background: var(--primary); color: white; } .btn-sm-blue:hover { background: var(--primary-light); }
+        .btn-sm-green { background: var(--success); color: white; } .btn-sm-green:hover { background: #2A7B5A; }
+        .btn-sm-red { background: var(--danger); color: white; } .btn-sm-red:hover { background: #9B1F1F; }
+        .btn-sm-amber { background: var(--accent); color: white; } .btn-sm-amber:hover { background: #A5741D; }
+
+        /* ==========================================
+           예약 리스트
+        ========================================== */
+        .res-list { display: flex; flex-direction: column; gap: 6px; }
+        .res-item { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 10px 12px; transition: all .15s; border-left: 3px solid var(--primary); }
+        .res-item:hover { border-color: var(--primary-light); }
+        .res-item.sponsor { border-left-color: var(--success); }
+        .res-item.vip { border-left-color: var(--vip); }
+        .res-item.staff { border-left-color: var(--staff); }
+        .res-item.checked-in { background: #F0FBF5; border-color: var(--seat-checked); }
+        .res-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+        .res-name { font-size: 13px; font-weight: 700; }
+        .res-badge { font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 10px; }
+        .badge-normal { background: var(--surface2); color: var(--primary); }
+        .badge-sponsor { background: #e8f5e9; color: var(--success); }
+        .badge-vip { background: #f3e5f5; color: var(--vip); }
+        .badge-staff { background: #fff3e0; color: var(--staff); }
+        .badge-checked { background: #E0F5EA; color: var(--success); }
+        .res-meta { font-size: 11px; color: var(--text3); display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 6px; }
+        .res-actions { display: flex; gap: 4px; flex-wrap: wrap; }
+        .res-empty { color: var(--text3); font-size: 13px; text-align: center; padding: 20px; }
+        .assign-item:hover { background-color: var(--surface2); transform: translateY(-1px); box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .seat-badge-container { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+        .seat-check-btn { background: #fff; color: var(--primary); border: 1.5px solid var(--primary); border-radius: 4px; padding: 3px 6px; font-size: 11px; font-weight: bold; cursor: pointer; transition: all 0.2s; outline: none; }
+        .seat-check-btn:hover { background: #e3f2fd; }
+        .seat-check-btn.is-checked { background: var(--success); color: #fff; border-color: var(--success); }
+        .seat-check-btn.is-checked:hover { background: #219a52; }
+
+        /* ==========================================
+           메인 영역
+        ========================================== */
+        .main-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; margin-bottom: 10px; }
+        .main-title { font-size: 18px; font-weight: 700; color: var(--primary-dark); display: flex; align-items: center; gap: 10px; }
+        .legend { display: flex; gap: 14px; flex-wrap: wrap; background: var(--surface); padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border); }
+        .legend-item { display: flex; align-items: center; gap: 5px; font-size: 12px; color: var(--text2); font-weight: bold; }
+        .legend-dot { width: 14px; height: 14px; border-radius: 3px; border: 1px solid rgba(0,0,0,0.1); }
+
+        /* ==========================================
+           좌석 배치도
+        ========================================== */
+        .seat-map-wrapper { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; overflow-x: auto; flex: 1; }
+        .stage-label { background: var(--primary-dark); color: white; text-align: center; padding: 10px 60px; border-radius: 6px; font-size: 14px; font-weight: 700; letter-spacing: 3px; margin: 0 auto 24px; width: fit-content; min-width: 320px; }
+        .console-label { background: #e0e0e0; color: var(--text2); text-align: center; padding: 10px 60px; border-radius: 6px; font-size: 14px; font-weight: 700; letter-spacing: 3px; margin: 30px auto 0; width: fit-content; min-width: 320px; }
+        .seat-grid { display: flex; flex-direction: column; gap: 4px; min-width: 1000px; align-items: center; }
+        .seat-row { display: flex; align-items: center; gap: 3px; position: relative; }
+        .row-label { width: 22px; text-align: center; font-size: 12px; font-weight: 700; color: var(--text3); flex-shrink: 0; margin-right: 5px; }
+        .aisle { width: 18px; flex-shrink: 0; }
+        .seat { width: 36px; height: 30px; border-radius: 4px 4px 2px 2px; border: 1px solid; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; cursor: pointer; transition: all .12s; flex-shrink: 0; position: relative; overflow: hidden; }
+        .seat.empty { background: var(--seat-empty); border-color: var(--seat-empty-border); color: var(--text3); }
+        .seat.empty:hover { background: #e3f2fd; border-color: var(--primary); transform: scale(1.1); z-index: 10; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+        .seat.reserved-general { background: #e3f2fd; border-color: #1976d2; color: #1976d2; }
+        .seat.reserved-sponsor { background: #e8f5e9; border-color: #388e3c; color: #388e3c; }
+        .seat.reserved-vip { background: #f3e5f5; border-color: #8e24aa; color: #8e24aa; }
+        .seat.reserved-staff { background: #fff3e0; border-color: #f57c00; color: #f57c00; }
+        .seat.vip-zone { background-color: #FFF9C4; border: 1.5px dashed var(--accent); color: var(--accent); font-weight: bold; }
+        .seat.checked { background: var(--seat-checked) !important; border-color: var(--seat-checked-border) !important; color: white !important; }
+        .seat.blocked { background: #E8E8E8; border-color: #CCCCCC; cursor: pointer; color: #9e9e9e; }
+        .seat.blocked:hover { transform: scale(1.1); z-index: 10; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+        .seat-num { display: block; line-height: 1; }
+        .seat-name { display: block; font-size: 8.5px; letter-spacing: -0.5px; white-space: nowrap; line-height: 1; margin-top: 2px; font-weight: bold; color: #d32f2f; }
+        .seat.checked .seat-name { color: white; }
+        .booth-top { width: 231px; height: 34px; background: #34495e; color: #ecf0f1; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; letter-spacing: 2px; border-radius: 6px 6px 0 0; margin-bottom: -4px; position: relative; z-index: 2; box-shadow: inset 0 0 10px rgba(0,0,0,0.3); border: 1px solid #2c3e50; border-bottom: none; }
+        .booth-bottom { width: 231px; height: 30px; background: #34495e; border-radius: 0 0 6px 6px; box-shadow: inset 0 0 10px rgba(0,0,0,0.3); border: 1px solid #2c3e50; border-top: none; }
+        .wheelchair-space { width: 75px; height: 30px; background: #e3f2fd; border: 1.5px dashed #1976d2; color: #1976d2; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+        .entrance-door { position: absolute; left: -40px; height: 26px; width: 28px; background: #27ae60; color: white; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 14px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); z-index: 5; cursor: help; }
+
+        /* ==========================================
+           모달
+        ========================================== */
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 20px; }
+        .modal { background: var(--surface); border-radius: 14px; padding: 24px; max-width: 350px; width: 100%; box-shadow: 0 20px 60px rgba(0,0,0,0.3); max-height: 90vh; overflow-y: auto; }
+        .modal h2 { font-size: 16px; font-weight: 700; color: var(--primary-dark); margin-top: 0; margin-bottom: 16px; }
+        .modal-seat-info { background: var(--surface2); border-radius: var(--radius); padding: 15px; margin-bottom: 16px; font-size: 13px; line-height: 1.6; }
+        .modal-actions { display: flex; gap: 8px; margin-top: 16px; flex-wrap: wrap; }
+        .modal-actions button { flex: 1; min-width: 45%; }
+        .hidden { display: none !important; }
+
+        /* ==========================================
+           다른 페이지들
+        ========================================== */
+        #page-list, #page-dash, #page-wait { flex-direction: column; padding: 24px; overflow-y: auto; background: var(--surface2); }
+        .filter-bar { background: var(--surface); padding: 15px 20px; border-radius: var(--radius); border: 1px solid var(--border); margin-bottom: 20px; display: flex; gap: 15px; align-items: center; flex-wrap: wrap; }
+        .filter-item { display: flex; align-items: center; gap: 8px; }
+        .filter-item label { font-size: 13px; font-weight: bold; color: var(--text2); }
+        .filter-item select, .filter-item input { padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 13px; outline: none; }
+        .filter-item input:focus, .filter-item select:focus { border-color: var(--primary); }
+        .data-table-container { background: var(--surface); border-radius: var(--radius); border: 1px solid var(--border); overflow-x: auto; flex: 1; }
+        .data-table { width: 100%; border-collapse: collapse; text-align: center; font-size: 13px; min-width: 1000px; }
+        .data-table th { background: var(--primary-dark); color: white; padding: 12px; font-weight: 600; position: sticky; top: 0; z-index: 5; white-space: nowrap; }
+        .data-table td { padding: 12px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+        .data-table tr:hover { background: #f8fafd; }
+        .data-table .badge { display: inline-block; padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: bold; }
+        .status-complete { color: var(--success); font-weight: bold; }
+        .status-pending { color: var(--danger); font-weight: bold; }
+        .queue-badge { background: #ffeaa7; color: #d35400; padding: 4px 10px; border-radius: 15px; font-weight: bold; font-size: 12px; border: 1px solid #f39c12; }
+        .progress-bar-bg { background: #e0e0e0; border-radius: 4px; width: 100%; height: 8px; margin-bottom: 4px; overflow: hidden; }
+        .progress-bar-fill { background: var(--primary); width: 0%; height: 100%; border-radius: 4px; transition: width 0.3s; }
+        .progress-bar-fill.high { background: var(--success); }
+        .progress-bar-fill.medium { background: var(--accent); }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+
+<!-- ==========================================
+     🔐 로그인 화면
+========================================== -->
+<div id="loginPage">
+    <div class="login-box">
+        <div class="login-logo">🎭</div>
+        <div class="login-title">2026 빛의 여로</div>
+        <div class="login-subtitle">예매 관리 시스템 — 관리자 전용</div>
+
+        <div class="login-field">
+            <label>이메일</label>
+            <input type="email" id="loginEmail" placeholder="이메일 주소 입력" onkeydown="if(event.key==='Enter') doLogin()">
+        </div>
+        <div class="login-field">
+            <label>비밀번호</label>
+            <input type="password" id="loginPassword" placeholder="비밀번호 입력" onkeydown="if(event.key==='Enter') doLogin()">
+        </div>
+
+        <button class="login-btn" id="loginBtn" onclick="doLogin()">로그인</button>
+        <div class="login-error" id="loginError"></div>
+    </div>
+</div>
+
+<!-- ==========================================
+     🔥 Firebase 연결 상태 배너
+========================================== -->
+<div id="syncBanner">🔴 Firebase 서버에 연결 중...</div>
+
+<!-- ==========================================
+     헤더
+========================================== -->
+<div class="header">
+    <div class="header-left">
+        <div class="header-title">
+            <span id="editableTitle" contenteditable="true" onblur="saveAppTitle()">2026 빛의 여로</span>
+        </div>
+        <div class="header-badge">새힘아트홀 예매 관리</div>
+    </div>
+    <div class="header-right">
+        <div class="user-info">
+            <span class="user-dot"></span>
+            <span id="userEmailDisplay">-</span> 님 접속 중
+            &nbsp;|&nbsp; <span id="lastSyncTime">-</span>
+        </div>
+        <button class="logout-btn" onclick="doLogout()">🚪 로그아웃</button>
+    </div>
+</div>
+
+<!-- ==========================================
+     탭
+========================================== -->
+<div class="top-tabs">
+    <button class="top-tab active" id="nav-main" onclick="switchTopTab('main')">🎫 좌석 배정 및 관리</button>
+    <button class="top-tab" id="nav-dash" onclick="switchTopTab('dash')">📊 회차별 전체 현황</button>
+    <button class="top-tab" id="nav-list" onclick="switchTopTab('list')">📋 통합 예매 리스트</button>
+    <button class="top-tab" id="nav-wait" onclick="switchTopTab('wait')">⏳ 대기자 명단</button>
+</div>
+
+<!-- PAGE 1 -->
+<div id="page-main" class="page active">
+    <div class="sidebar">
+        <div class="sidebar-header"><h2>📝 해당 회차 대기열 관리</h2></div>
+        <div class="sidebar-tabs">
+            <button id="btn-tab-new" class="sidebar-tab active" onclick="switchSidebarTab('new')">신규 예약 입력</button>
+            <button id="btn-tab-list" class="sidebar-tab" onclick="switchSidebarTab('list')">예매 리스트</button>
+        </div>
+        <div class="sidebar-content" id="tab-new">
+            <div class="form-section">
+                <div class="form-row-2">
+                    <div class="form-row"><label>예약자명</label><input type="text" id="resName" placeholder="예: 홍길동"></div>
+                    <div class="form-row"><label>관람 매수</label>
+                        <input type="number" id="resCount" value="1" min="1" placeholder="매수 입력" style="text-align:center; font-weight:bold;">
+                    </div>
+                </div>
+                <div class="form-row"><label>연락처</label><input type="text" id="resPhone" value="010-" oninput="autoHyphenPhone(this)" maxlength="13"></div>
+                <div class="form-row-2">
+                    <div class="form-row"><label>예매 구분</label>
+                        <select id="resType">
+                            <option value="일반">일반</option><option value="후원/CMS">후원/CMS</option>
+                            <option value="VIP">VIP</option><option value="단원/STAFF">단원/STAFF</option>
+                        </select>
+                    </div>
+                    <div class="form-row"><label>예매 방법</label>
+                        <select id="resMethod">
+                            <option value="전화">전화</option><option value="문자">문자</option>
+                            <option value="카톡">카톡</option><option value="플친">플친</option><option value="기타">기타</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row"><label>담당자</label>
+                    <select id="resManager">
+                        <option value="보라">보라</option><option value="보연">보연</option>
+                        <option value="민지">민지</option><option value="단장님">단장님</option>
+                    </select>
+                </div>
+                <button class="btn-primary" onclick="addReservation()" style="margin-top:10px;">예약 대기 목록에 추가하기</button>
+            </div>
+        </div>
+        <div class="sidebar-content hidden" id="tab-list">
+            <div class="res-list" id="reservationList"></div>
+        </div>
+    </div>
+
+    <div class="main">
+        <div class="main-header">
+            <div class="main-title">
+                조회 회차:
+                <select id="viewShowtime" onchange="renderAll()" style="padding:6px 10px;font-size:16px;border-radius:6px;border:1px solid var(--border);font-weight:bold;">
+                    <option value="1">1회차 (5/30 19:00)</option><option value="2">2회차 (5/31 14:00)</option>
+                    <option value="3">3회차 (5/31 18:00)</option><option value="4">4회차 (6/06 19:00)</option>
+                    <option value="5">5회차 (6/07 14:00)</option><option value="6">6회차 (6/07 18:00)</option>
+                    <option value="7">7회차 (6/13 19:00)</option>
+                </select>
+                <button id="toggleEditModeBtn" class="btn-sm btn-sm-red" onclick="toggleEditMode()" style="padding:6px 12px;font-size:13px;margin-left:10px;">🛠 불가석 지정 모드: 켜기</button>
+            </div>
+            <button class="btn-sm btn-sm-green" onclick="exportToExcel()" style="padding:8px 16px;font-size:13px;">📥 엑셀(CSV) 다운로드</button>
+        </div>
+        <div class="stats-row" id="statsRow"></div>
+        <div class="main-header" style="background:var(--surface);padding:12px 20px;border-radius:8px;border:1px solid var(--border);margin-bottom:0;">
+            <div style="font-size:13px;font-weight:bold;color:var(--primary);">💡 빈 좌석을 클릭하면 대기자 명단 창이 열립니다.</div>
+            <div class="legend" style="border:none;padding:0;background:none;">
+                <div class="legend-item"><div class="legend-dot" style="background:#fff;"></div> 일반석</div>
+                <div class="legend-item"><div class="legend-dot" style="background:#FFF9C4;border:1.5px dashed var(--accent);"></div> VIP구역</div>
+                <div class="legend-item"><div class="legend-dot" style="background:#e3f2fd;border-color:#1976d2;"></div> 일반예약</div>
+                <div class="legend-item"><div class="legend-dot" style="background:#e8f5e9;border-color:#388e3c;"></div> 후원/CMS</div>
+                <div class="legend-item"><div class="legend-dot" style="background:#f3e5f5;border-color:#8e24aa;"></div> VIP예약</div>
+                <div class="legend-item"><div class="legend-dot" style="background:#fff3e0;border-color:#f57c00;"></div> 단원/STAFF</div>
+                <div class="legend-item"><div class="legend-dot" style="background:#E8E8E8;"></div> 불가석</div>
+            </div>
+        </div>
+        <div class="seat-map-wrapper">
+            <div class="stage-label">STAGE</div>
+            <div class="seat-grid" id="seatingChart"></div>
+            <div class="console-label">CONSOLE</div>
+        </div>
+    </div>
+</div>
+
+<!-- PAGE 2 -->
+<div id="page-dash" class="page">
+    <div class="main-header">
+        <div class="main-title">📊 회차별 전체 예매 현황</div>
+        <button class="btn-sm btn-sm-green" onclick="exportToExcel()" style="padding:8px 16px;font-size:13px;">📥 엑셀(CSV) 다운로드</button>
+    </div>
+    <div class="data-table-container">
+        <table class="data-table">
+            <thead><tr>
+                <th>회차</th><th>일시</th><th>가용 좌석</th><th>예약석</th>
+                <th>잔여석</th><th>예약률</th><th>입장 완료</th><th>입장률</th>
+            </tr></thead>
+            <tbody id="dashboardTbody"></tbody>
+        </table>
+    </div>
+</div>
+
+<!-- PAGE 3 -->
+<div id="page-list" class="page">
+    <div class="main-header">
+        <div class="main-title">📋 상세 예매 리스트 조회</div>
+        <button class="btn-sm btn-sm-green" onclick="exportToExcel()" style="padding:8px 16px;font-size:13px;">📥 엑셀(CSV) 다운로드</button>
+    </div>
+    <div class="filter-bar">
+        <div class="filter-item"><label>회차 필터</label>
+            <select id="filterShowtime" onchange="renderTotalList()">
+                <option value="all">전체 회차</option>
+                <option value="1">1회차</option><option value="2">2회차</option><option value="3">3회차</option>
+                <option value="4">4회차</option><option value="5">5회차</option><option value="6">6회차</option><option value="7">7회차</option>
+            </select>
+        </div>
+        <div class="filter-item" style="flex:1;justify-content:flex-end;"><label>검색</label>
+            <input type="text" id="filterKeyword" placeholder="이름 또는 연락처 검색" onkeyup="renderTotalList()" style="width:200px;">
+        </div>
+    </div>
+    <div class="data-table-container">
+        <table class="data-table">
+            <thead><tr>
+                <th>회차</th><th>예약자명</th><th>연락처</th><th>구분</th><th>총매수</th>
+                <th>배정/대기</th><th>배정된 좌석번호</th><th>예매방법</th><th>담당자</th><th>입장상태</th>
+            </tr></thead>
+            <tbody id="totalListTbody"></tbody>
+        </table>
+    </div>
+</div>
+
+<!-- PAGE 4 -->
+<div id="page-wait" class="page">
+    <div class="main-header"><div class="main-title">⏳ 회차별 대기 예매자 명단</div></div>
+    <div class="filter-bar">
+        <div class="filter-item"><label>회차 선택</label>
+            <select id="waitlistShowtime" onchange="renderWaitlist()" style="padding:8px 12px;font-weight:bold;">
+                <option value="1">1회차</option><option value="2">2회차</option><option value="3">3회차</option>
+                <option value="4">4회차</option><option value="5">5회차</option><option value="6">6회차</option><option value="7">7회차</option>
+            </select>
+        </div>
+    </div>
+    <div class="data-table-container">
+        <table class="data-table">
+            <thead><tr>
+                <th>대기 순번</th><th>회차</th><th>예약자명</th><th>연락처</th>
+                <th>구분</th><th>대기 매수</th><th>담당자</th><th>상태</th>
+            </tr></thead>
+            <tbody id="waitlistTbody"></tbody>
+        </table>
+    </div>
+</div>
+
+<!-- 모달: 배정 -->
+<div id="assignModal" class="modal-overlay hidden">
+    <div class="modal" style="max-width:400px;">
+        <h2 id="assignModalTitle">🎫 좌석 배정</h2>
+        <div style="margin-bottom:15px;font-size:13px;color:var(--text3);">이 좌석에 배정할 대기자를 선택해주세요.</div>
+        <div id="assignModalList" class="res-list" style="max-height:400px;overflow-y:auto;"></div>
+        <div class="modal-actions" style="margin-top:15px;">
+            <button class="btn-primary" onclick="closeModal('assignModal')" style="background:var(--surface2);color:var(--text);border:1px solid var(--border);">닫기</button>
+        </div>
+    </div>
+</div>
+
+<!-- 모달: 좌석 현황 -->
+<div id="seatModal" class="modal-overlay hidden">
+    <div class="modal">
+        <h2>🎫 좌석 상세 정보 및 관리</h2>
+        <div id="modalSeatInfo" class="modal-seat-info"></div>
+        <div class="modal-actions">
+            <button id="btnCheckIn" class="btn-primary btn-sm-green">입장 확인</button>
+            <button id="btnCancelSeat" class="btn-primary btn-danger">좌석 배정 취소</button>
+        </div>
+        <div class="modal-actions" style="margin-top:10px;">
+            <button class="btn-primary" onclick="closeModal('seatModal')" style="background:var(--surface2);color:var(--text);border:1px solid var(--border);">닫기</button>
+        </div>
+    </div>
+</div>
+
+<!-- 모달: 정보 수정 -->
+<div id="editModal" class="modal-overlay hidden">
+    <div class="modal">
+        <h2>✏️ 예매자 정보 수정</h2>
+        <div class="form-row"><label>예약자명</label><input type="text" id="editName"></div>
+        <div class="form-row"><label>연락처</label><input type="text" id="editPhone" oninput="autoHyphenPhone(this)" maxlength="13"></div>
+        <div class="form-row-2">
+            <div class="form-row"><label>구분</label>
+                <select id="editType"><option value="일반">일반</option><option value="후원/CMS">후원/CMS</option><option value="VIP">VIP</option><option value="단원/STAFF">단원/STAFF</option></select>
+            </div>
+            <div class="form-row"><label>방법</label>
+                <select id="editMethod"><option value="전화">전화</option><option value="문자">문자</option><option value="카톡">카톡</option><option value="플친">플친</option><option value="기타">기타</option></select>
+            </div>
+        </div>
+        <div class="form-row" style="margin-bottom:20px;"><label>담당자</label>
+            <select id="editManager"><option value="보라">보라</option><option value="보연">보연</option><option value="민지">민지</option><option value="단장님">단장님</option></select>
+        </div>
+        <div class="modal-actions">
+            <button class="btn-primary" onclick="saveEditedInfo()">저장</button>
+            <button class="btn-primary btn-danger" onclick="closeModal('editModal')">취소</button>
+        </div>
+    </div>
+</div>
+
+<!-- ==========================================
+     🔥 Firebase SDK + 앱 로직
+========================================== -->
+<script type="module">
+    import { initializeApp }                              from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getDatabase, ref, set, onValue }             from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+    import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged }
+                                                          from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+    // ✅ Firebase 설정
+    const firebaseConfig = {
+        apiKey: "AIzaSyCtrEzio7O1hwO1pA_J9TllKYkscUxkIno",
+        authDomain: "musical-booking.firebaseapp.com",
+        databaseURL: "https://musical-booking-default-rtdb.asia-southeast1.firebasedatabase.app",
+        projectId: "musical-booking",
+        storageBucket: "musical-booking.firebasestorage.app",
+        messagingSenderId: "164036321712",
+        appId: "1:164036321712:web:1ac3f0f629af32a42f3675"
+    };
+
+    const app      = initializeApp(firebaseConfig);
+    const database = getDatabase(app);
+    const auth     = getAuth(app);
+
+    // ============================================================
+    // 전역 상태
+    // ============================================================
+    const TOTAL_SEATS = 298;
+    let isBlockedEditMode = false;
+    let currentEditTarget = null;
+    let isSaving = false;
+
+    let db = { pending: [], seats: {}, title: '2026 빛의 여로' };
+    let BLOCKED_SEATS_MAP = {};
+    for (let i = 1; i <= 7; i++) BLOCKED_SEATS_MAP[i] = ['A1','A2','A23','A24','B24','D24','E24','H24'];
+
+    // ============================================================
+    // 🔐 로그인 / 로그아웃
+    // ============================================================
+    window.doLogin = async function() {
+        const email    = document.getElementById('loginEmail').value.trim();
+        const password = document.getElementById('loginPassword').value;
+        const btn      = document.getElementById('loginBtn');
+        const errDiv   = document.getElementById('loginError');
+        errDiv.textContent = '';
+        if (!email || !password) { errDiv.textContent = '이메일과 비밀번호를 모두 입력해주세요.'; return; }
+        btn.disabled = true;
+        btn.innerHTML = '<span class="login-spinner"></span>로그인 중...';
+        try {
+            await signInWithEmailAndPassword(auth, email, password);
+        } catch(e) {
+            let msg = '로그인에 실패했습니다.';
+            if (e.code === 'auth/user-not-found' || e.code === 'auth/wrong-password' || e.code === 'auth/invalid-credential') msg = '이메일 또는 비밀번호가 올바르지 않습니다.';
+            else if (e.code === 'auth/invalid-email') msg = '올바른 이메일 형식이 아닙니다.';
+            else if (e.code === 'auth/too-many-requests') msg = '너무 많은 시도가 있었습니다. 잠시 후 다시 시도해주세요.';
+            errDiv.textContent = msg;
+            btn.disabled = false;
+            btn.textContent = '로그인';
+        }
+    };
+
+    window.doLogout = async function() {
+        if (!confirm('로그아웃 하시겠습니까?')) return;
+        await signOut(auth);
+    };
+
+    // ============================================================
+    // 🔐 인증 상태 감지 — 로그인 여부에 따라 화면 전환
+    // ============================================================
+    onAuthStateChanged(auth, (user) => {
+        if (user) {
+            // 로그인 성공 → 로그인 화면 숨기고 앱 표시
+            document.getElementById('loginPage').classList.add('hidden');
+            document.getElementById('userEmailDisplay').textContent = user.email;
+            startFirebaseListener(); // DB 리스너 시작
+        } else {
+            // 로그아웃 → 로그인 화면 표시
+            document.getElementById('loginPage').classList.remove('hidden');
+            document.getElementById('loginBtn').disabled = false;
+            document.getElementById('loginBtn').textContent = '로그인';
+            document.getElementById('loginPassword').value = '';
+            setSyncStatus('', '🔴 로그인이 필요합니다');
+        }
+    });
+
+    // ============================================================
+    // 🔥 Firebase 실시간 리스너
+    // ============================================================
+    let listenerStarted = false;
+    function startFirebaseListener() {
+        if (listenerStarted) return;
+        listenerStarted = true;
+        const dbRef = ref(database, 'bookingData');
+        onValue(dbRef, (snapshot) => {
+            if (isSaving) return;
+            const data = snapshot.val();
+            if (data) {
+                db.pending  = data.pending  || [];
+                db.seats    = data.seats    || {};
+                db.title    = data.title    || '2026 빛의 여로';
+                if (data.blockedMap) BLOCKED_SEATS_MAP = data.blockedMap;
+            }
+            document.getElementById('editableTitle').innerText = db.title;
+            document.title = db.title + ' 예매 관리 시스템';
+            setSyncStatus('connected', '🟢 Firebase 실시간 연동 중 — 모든 변경사항이 자동으로 공유됩니다');
+            updateLastSync();
+            renderAll();
+        }, (error) => {
+            setSyncStatus('', '🔴 Firebase 오류: ' + error.message);
+        });
+    }
+
+    // ============================================================
+    // 🔥 saveData
+    // ============================================================
+    window.saveData = async function() {
+        isSaving = true;
+        setSyncStatus('syncing', '🟡 저장 중...');
+        try {
+            await set(ref(database, 'bookingData'), {
+                pending: db.pending,
+                seats: db.seats,
+                title: db.title,
+                blockedMap: BLOCKED_SEATS_MAP
+            });
+            setSyncStatus('connected', '🟢 Firebase 실시간 연동 중 — 모든 변경사항이 자동으로 공유됩니다');
+            updateLastSync();
+        } catch(e) {
+            setSyncStatus('', '🔴 저장 실패: ' + e.message);
+            alert('저장에 실패했습니다: ' + e.message);
+        } finally {
+            isSaving = false;
+        }
+        renderAll();
+    };
+
+    // ============================================================
+    // 유틸
+    // ============================================================
+    function setSyncStatus(status, msg) {
+        const banner = document.getElementById('syncBanner');
+        banner.className = status;
+        banner.textContent = msg;
+    }
+
+    function updateLastSync() {
+        const now = new Date();
+        const t = `${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}:${now.getSeconds().toString().padStart(2,'0')}`;
+        document.getElementById('lastSyncTime').textContent = '마지막 동기화: ' + t;
+    }
+
+    function getUsableSeats(show) {
+        return TOTAL_SEATS - (BLOCKED_SEATS_MAP[show] ? BLOCKED_SEATS_MAP[show].length : 0);
+    }
+
+    function isBlockedSeat(show, row, num) {
+        return BLOCKED_SEATS_MAP[show] ? BLOCKED_SEATS_MAP[show].includes(row + num) : false;
+    }
+
+    function isVIPZone(row, num) {
+        if (row === 'D' && num >= 5 && num <= 20) return true;
+        if (['E','F','G','H'].includes(row) && num >= 4 && num <= 21) return true;
+        if (row === 'I' && num >= 5 && num <= 20) return true;
+        return false;
+    }
+
+    // ============================================================
+    // 전역 함수 등록
+    // ============================================================
+    window.saveAppTitle = function() {
+        let t = document.getElementById('editableTitle').innerText.trim();
+        if (!t) t = '2026 빛의 여로';
+        db.title = t;
+        document.title = t + ' 예매 관리 시스템';
+        saveData();
+    };
+
+    window.autoHyphenPhone = function(el) {
+        let v = el.value.replace(/[^0-9]/g,'');
+        el.value = v.length < 4 ? v : v.length < 8 ? v.slice(0,3)+'-'+v.slice(3) : v.slice(0,3)+'-'+v.slice(3,7)+'-'+v.slice(7,11);
+    };
+
+    window.switchTopTab = function(tab) {
+        ['main','dash','list','wait'].forEach(t => {
+            document.getElementById('nav-'+t).classList.remove('active');
+            document.getElementById('page-'+t).classList.remove('active');
+        });
+        document.getElementById('nav-'+tab).classList.add('active');
+        document.getElementById('page-'+tab).classList.add('active');
+        if(tab==='dash') renderDashboard();
+        if(tab==='list') renderTotalList();
+        if(tab==='wait') renderWaitlist();
+    };
+
+    window.switchSidebarTab = function(tab) {
+        ['new','list'].forEach(t => {
+            document.getElementById('btn-tab-'+t).classList.remove('active');
+            document.getElementById('tab-'+t).classList.add('hidden');
+        });
+        document.getElementById('btn-tab-'+tab).classList.add('active');
+        document.getElementById('tab-'+tab).classList.remove('hidden');
+    };
+
+    window.toggleEditMode = function() {
+        isBlockedEditMode = !isBlockedEditMode;
+        const btn = document.getElementById('toggleEditModeBtn');
+        btn.innerText = isBlockedEditMode ? '🛠 불가석 지정 모드: 켜짐 (끄기)' : '🛠 불가석 지정 모드: 켜기';
+        btn.className = isBlockedEditMode ? 'btn-sm btn-sm-blue' : 'btn-sm btn-sm-red';
+        if(isBlockedEditMode) alert('불가석 직접 지정 모드가 활성화되었습니다.\n좌석을 클릭하면 불가석으로 추가/해제됩니다.');
+    };
+
+    window.toggleCheckInFromList = function(seatId) {
+        if(db.seats[seatId]) { db.seats[seatId].pickedUp = !db.seats[seatId].pickedUp; saveData(); }
+    };
+
+    window.toggleBlockedSeat = function(show, row, num) {
+        let seatName = row + num, seatId = show+'-'+row+'-'+num;
+        let list = [...(BLOCKED_SEATS_MAP[show] || [])];
+        let idx = list.indexOf(seatName);
+        if (idx > -1) {
+            list.splice(idx, 1);
+        } else {
+            if (db.seats[seatId]) {
+                if (!confirm(row+'열 '+num+'번은 이미 배정되어 있습니다.\n강제로 불가석 처리하고 예매자를 대기 상태로 되돌리시겠습니까?')) return;
+                let s = db.seats[seatId];
+                db.pending.push({ show, name:s.name, phone:s.phone, type:s.type, method:s.method, manager:s.manager, isOverflow:false });
+                delete db.seats[seatId];
+            }
+            list.push(seatName);
+        }
+        BLOCKED_SEATS_MAP[show] = list;
+        saveData();
+    };
+
+    window.renderAll = function() {
+        updateDashboard();
+        renderSidebarReservationList();
+        renderSeatingChart();
+        if(document.getElementById('page-dash').classList.contains('active')) renderDashboard();
+        if(document.getElementById('page-list').classList.contains('active')) renderTotalList();
+        if(document.getElementById('page-wait').classList.contains('active')) renderWaitlist();
+    };
+
+    window.addReservation = function() {
+        const show = document.getElementById('viewShowtime').value;
+        const name = document.getElementById('resName').value.trim();
+        const phone = document.getElementById('resPhone').value;
+        const type = document.getElementById('resType').value;
+        const method = document.getElementById('resMethod').value;
+        const manager = document.getElementById('resManager').value;
+        const count = parseInt(document.getElementById('resCount').value);
+        if (!name || phone === '010-' || phone.length < 12) { alert("이름과 정확한 연락처를 입력해주세요."); return; }
+
+        let assigned=0, pendingCount=0;
+        db.pending.forEach(p => { if(parseInt(p.show)===parseInt(show)) pendingCount++; });
+        Object.keys(db.seats).forEach(k => { if(k.startsWith(show+'-')) assigned++; });
+        let totalReserved = assigned+pendingCount, remaining = getUsableSeats(show)-totalReserved;
+
+        if (count > remaining) {
+            let msg = remaining > 0
+                ? "잔여 가용 좌석("+remaining+"석)보다 예약 매수("+count+"매)가 많습니다.\n초과 인원은 '대기 예매'로 접수됩니다.\n\n진행하시겠습니까?"
+                : "전석 매진 상태입니다.\n'대기 예매'로 접수하시겠습니까?";
+            if (!confirm(msg)) return;
+        }
+        for (let i=0; i<count; i++) {
+            db.pending.push({ show, name, phone, type, method, manager, isOverflow: (totalReserved+i+1) > getUsableSeats(show) });
+        }
+        document.getElementById('resName').value = '';
+        document.getElementById('resPhone').value = '010-';
+        saveData();
+        alert(name+'님 '+count+'매가 접수되었습니다.');
+    };
+
+    function updateDashboard() {
+        const show = document.getElementById('viewShowtime').value;
+        let reserved=0, general=0, sponsor=0, vip=0, staff=0, pickedUp=0, pN=0, pO=0;
+        Object.keys(db.seats).forEach(id => {
+            if(!id.startsWith(show+'-')) return;
+            reserved++;
+            let t = db.seats[id].type;
+            if(t==='일반') general++;
+            else if(t==='후원/CMS'||t==='후원') sponsor++;
+            else if(t==='VIP') vip++;
+            else if(t==='단원/STAFF') staff++;
+            if(db.seats[id].pickedUp) pickedUp++;
+        });
+        db.pending.forEach(p => { if(parseInt(p.show)===parseInt(show)) { p.isOverflow ? pO++ : pN++; } });
+        document.getElementById('statsRow').innerHTML = `
+            <div class="stat-card"><div class="stat-label">총좌석(가용)</div><div class="stat-val">${getUsableSeats(show)}</div></div>
+            <div class="stat-card"><div class="stat-label">배정완료</div><div class="stat-val blue">${reserved}</div></div>
+            <div class="stat-card"><div class="stat-label">잔여좌석</div><div class="stat-val amber">${getUsableSeats(show)-reserved}</div></div>
+            <div class="stat-card"><div class="stat-label">미배정 / 초과대기</div><div class="stat-val" style="font-size:15px;color:#d35400;">${pN} / ${pO}</div></div>
+            <div class="stat-card"><div class="stat-label">일반/후원</div><div class="stat-val" style="font-size:15px;">${general} / ${sponsor}</div></div>
+            <div class="stat-card"><div class="stat-label">VIP/단원</div><div class="stat-val" style="font-size:15px;">${vip} / ${staff}</div></div>
+            <div class="stat-card"><div class="stat-label">입장완료</div><div class="stat-val green">${pickedUp}</div></div>
+            <div class="stat-card"><div class="stat-label">총 예매 건수</div><div class="stat-val" style="font-size:15px;">${reserved+pN+pO}</div></div>`;
+    }
+
+    window.openEditInfoModal = function(show, name, phone, type, method, manager) {
+        currentEditTarget = { show, name, phone };
+        document.getElementById('editName').value = name;
+        document.getElementById('editPhone').value = phone;
+        document.getElementById('editType').value = type==='후원'?'후원/CMS':type;
+        document.getElementById('editMethod').value = method;
+        document.getElementById('editManager').value = manager;
+        document.getElementById('editModal').classList.remove('hidden');
+    };
+
+    window.saveEditedInfo = function() {
+        if (!currentEditTarget) return;
+        const nName=document.getElementById('editName').value.trim(), nPhone=document.getElementById('editPhone').value.trim();
+        const nType=document.getElementById('editType').value, nMethod=document.getElementById('editMethod').value, nManager=document.getElementById('editManager').value;
+        if (!nName||!nPhone||nPhone.length<12) { alert("이름과 연락처를 모두 입력해주세요."); return; }
+        const {show,name:oN,phone:oP} = currentEditTarget;
+        db.pending.forEach(p => { if(p.show===show&&p.name===oN&&p.phone===oP) Object.assign(p,{name:nName,phone:nPhone,type:nType,method:nMethod,manager:nManager}); });
+        Object.keys(db.seats).forEach(id => { if(id.startsWith(show+'-')) { let s=db.seats[id]; if(s.name===oN&&s.phone===oP) Object.assign(s,{name:nName,phone:nPhone,type:nType,method:nMethod,manager:nManager}); } });
+        saveData(); closeModal('editModal');
+    };
+
+    window.cancelEntireReservation = function(show, name, phone) {
+        if(!confirm('['+name+']님의 해당 회차 예매를 완전히 취소하시겠습니까?')) return;
+        db.pending = db.pending.filter(p => !(p.show===show&&p.name===name&&p.phone===phone));
+        Object.keys(db.seats).forEach(k => { if(k.startsWith(show+'-')) { let s=db.seats[k]; if(s.name===name&&s.phone===phone) delete db.seats[k]; } });
+        saveData(); alert("예매가 전체 취소되었습니다.");
+    };
+
+    window.changeTicketCount = function(show, name, phone, type, method, manager, currentTotal, currentPending) {
+        let input = prompt('['+name+']님의 현재 예매는 총 '+currentTotal+'매입니다.\n변경하실 최종 총 매수를 입력해주세요:', currentTotal);
+        if(input===null||input.trim()==='') return;
+        let newCount = parseInt(input);
+        if(isNaN(newCount)||newCount<=0) { alert("올바른 숫자를 입력해주세요."); return; }
+        if(newCount===currentTotal) return;
+        if(newCount > currentTotal) {
+            let add = newCount-currentTotal;
+            let assigned=0, pCount=0;
+            db.pending.forEach(p=>{if(parseInt(p.show)===parseInt(show))pCount++;});
+            Object.keys(db.seats).forEach(k=>{if(k.startsWith(show+'-'))assigned++;});
+            let total=assigned+pCount, rem=getUsableSeats(show)-total;
+            if(add>rem&&!confirm(rem>0?"잔여 가용 좌석("+rem+"석)보다 추가 매수("+add+"매)가 많습니다.\n초과 인원은 '대기 예매'로 접수됩니다.\n진행하시겠습니까?":"전석 매진 상태입니다.\n추가 인원을 '대기 예매'로 접수하시겠습니까?")) return;
+            for(let i=0;i<add;i++) db.pending.push({show,name,phone,type,method,manager,isOverflow:(total+i+1)>getUsableSeats(show)});
+            saveData(); alert(add+'매가 추가 접수되었습니다.');
+        } else {
+            let reduce = currentTotal-newCount;
+            if(reduce>currentPending){alert('미배정 티켓이 '+currentPending+'매뿐입니다.\n먼저 좌석 배치도에서 [좌석 배정 취소]를 진행해주세요.');return;}
+            let removed=0;
+            for(let i=db.pending.length-1;i>=0;i--){let p=db.pending[i];if(p.show===show&&p.name===name&&p.phone===phone){db.pending.splice(i,1);if(++removed===reduce)break;}}
+            saveData(); alert(reduce+'매가 취소(감소)되었습니다.');
+        }
+    };
+
+    function buildGroups(show) {
+        const groups = new Map();
+        db.pending.forEach(p => {
+            if(p.show!==show) return;
+            const k=p.name+'_'+p.phone;
+            if(!groups.has(k)) groups.set(k,{name:p.name,phone:p.phone,type:p.type,method:p.method,manager:p.manager,total:0,pending:0,assigned:0,seats:[],pickedUpCount:0,overflowCount:0});
+            const g=groups.get(k); g.total++; g.pending++; if(p.isOverflow) g.overflowCount++;
+        });
+        Object.keys(db.seats).forEach(id => {
+            if(!id.startsWith(show+'-')) return;
+            const s=db.seats[id], k=s.name+'_'+s.phone;
+            if(!groups.has(k)) groups.set(k,{name:s.name,phone:s.phone,type:s.type,method:s.method,manager:s.manager,total:0,pending:0,assigned:0,seats:[],pickedUpCount:0,overflowCount:0});
+            const g=groups.get(k); g.total++; g.assigned++; if(s.pickedUp) g.pickedUpCount++;
+            const pts=id.split('-'); g.seats.push({id,label:pts[1]+pts[2],label2:pts[1]+'-'+pts[2],pickedUp:s.pickedUp});
+        });
+        return groups;
+    }
+
+    function renderSidebarReservationList() {
+        const show = document.getElementById('viewShowtime').value;
+        const listDiv = document.getElementById('reservationList');
+        listDiv.innerHTML = '';
+        const groups = buildGroups(show);
+        if(groups.size===0){listDiv.innerHTML='<div class="res-empty">해당 회차에 내역이 없습니다.</div>';return;}
+        groups.forEach(g => {
+            const div=document.createElement('div');
+            div.className='res-item'+(g.type==='후원/CMS'||g.type==='후원'?' sponsor':g.type==='VIP'?' vip':g.type==='단원/STAFF'?' staff':'')+(g.pending===0?' checked-in':'');
+            let bc=g.type==='후원/CMS'||g.type==='후원'?'badge-sponsor':g.type==='VIP'?'badge-vip':g.type==='단원/STAFF'?'badge-staff':'badge-normal';
+            let seatsHtml=g.seats.length>0?'<div class="seat-badge-container">'+g.seats.map(s=>`<button class="seat-check-btn ${s.pickedUp?'is-checked':''}" onclick="toggleCheckInFromList('${s.id}')">${s.label}</button>`).join('')+'</div>':'<span style="color:var(--text3)">배정된 좌석 없음</span>';
+            let overText=g.overflowCount>0?` (초과대기 ${g.overflowCount})`:'';
+            let sBadge=g.pending>0?`<span class="res-badge" style="background:#ffeaa7;color:#d35400;">미배정 ${g.pending}건${overText}</span>`:'<span class="res-badge badge-checked">배정완료</span>';
+            div.innerHTML=`
+                <div class="res-top"><span class="res-name">${g.name} <span class="res-badge ${bc}">${g.type}</span> ${sBadge}</span></div>
+                <div class="res-meta"><span style="width:100%">📞 ${g.phone} | 🎟️ 총 ${g.total}매 (대기 ${g.pending})</span><div style="margin-top:2px">좌석: ${seatsHtml}</div></div>
+                <div class="res-actions">
+                    <button class="btn-sm btn-sm-amber" onclick="openEditInfoModal('${show}','${g.name}','${g.phone}','${g.type}','${g.method}','${g.manager}')">수정</button>
+                    <button class="btn-sm btn-sm-blue" onclick="changeTicketCount('${show}','${g.name}','${g.phone}','${g.type}','${g.method}','${g.manager}',${g.total},${g.pending})">매수변경</button>
+                    <button class="btn-sm btn-sm-red" onclick="cancelEntireReservation('${show}','${g.name}','${g.phone}')">전체취소</button>
+                </div>`;
+            listDiv.appendChild(div);
+        });
+    }
+
+    function renderSeatingChart() {
+        const show = document.getElementById('viewShowtime').value;
+        const chartDiv = document.getElementById('seatingChart');
+        chartDiv.innerHTML = '';
+        'ABCDEFGHIJKLM'.split('').forEach(row => {
+            const rowDiv=document.createElement('div'); rowDiv.className='seat-row';
+            rowDiv.innerHTML='<div class="row-label">'+row+'</div>';
+            if(row==='M'){const d=document.createElement('div');d.className='entrance-door';d.innerHTML='🚪';d.title='주 출입구';rowDiv.appendChild(d);}
+            for(let i=1;i<=24;i++){
+                if((row==='L'||row==='M')&&i>=19) continue;
+                if(row==='M'&&i===17){const w=document.createElement('div');w.className='wheelchair-space';w.innerHTML='♿ 휠체어석';rowDiv.appendChild(w);continue;}
+                if(row==='M'&&i===18){const g=document.createElement('div');g.className='aisle';rowDiv.appendChild(g);const b=document.createElement('div');b.className='booth-bottom';rowDiv.appendChild(b);continue;}
+                rowDiv.appendChild(createSeat(show,row,i));
+                if(i===6||i===18){const g=document.createElement('div');g.className='aisle';rowDiv.appendChild(g);}
+                if(i===18&&row==='L'){const bt=document.createElement('div');bt.className='booth-top';bt.innerHTML='🎬 영상 시스템 부스';rowDiv.appendChild(bt);}
+            }
+            chartDiv.appendChild(rowDiv);
+        });
+    }
+
+    function createSeat(show, row, num) {
+        const seatId=show+'-'+row+'-'+num, div=document.createElement('div');
+        div.className='seat';
+        if(isBlockedSeat(show,row,num)){
+            div.classList.add('blocked'); div.innerHTML='X';
+            div.onclick=()=>{if(isBlockedEditMode)toggleBlockedSeat(show,row,num);}; return div;
+        }
+        const s=db.seats[seatId];
+        if(s){
+            div.classList.add(s.type==='일반'?'reserved-general':s.type==='후원/CMS'||s.type==='후원'?'reserved-sponsor':s.type==='VIP'?'reserved-vip':'reserved-staff');
+            if(s.pickedUp) div.classList.add('checked');
+            const dn=s.name.length>4?s.name.slice(0,4):s.name;
+            div.innerHTML=`<span class="seat-num">${num}</span><span class="seat-name">${dn}</span>`;
+            div.onclick=()=>{
+                if(isBlockedEditMode){toggleBlockedSeat(show,row,num);return;}
+                const modal=document.getElementById('seatModal'), info=document.getElementById('modalSeatInfo');
+                const btnCI=document.getElementById('btnCheckIn'), btnC=document.getElementById('btnCancelSeat');
+                let total=0;
+                db.pending.forEach(p=>{if(p.show===show&&p.name===s.name&&p.phone===s.phone)total++;});
+                Object.keys(db.seats).forEach(k=>{if(k.startsWith(show+'-')){let x=db.seats[k];if(x.name===s.name&&x.phone===s.phone)total++;}});
+                info.innerHTML=`<strong>좌석번호: ${row}-${num}</strong><br><br><strong>예약자:</strong> ${s.name}님 (${s.type})<br><strong>연락처:</strong> ${s.phone}<br><strong>관람 매수:</strong> 총 ${total}매<br><strong>예매경로:</strong> ${s.method} / 담당: ${s.manager}<br><strong>상태:</strong> <span style="color:${s.pickedUp?'#27ae60':'#e74c3c'};font-weight:bold;">${s.pickedUp?'✅ 입장 완료':'⏳ 수령 대기'}</span>`;
+                btnCI.innerText=s.pickedUp?'입장 확인 취소':'입장(수령) 확인';
+                btnCI.className=s.pickedUp?'btn-primary':'btn-primary btn-sm-green';
+                btnCI.onclick=()=>{ db.seats[seatId].pickedUp=!db.seats[seatId].pickedUp; saveData(); closeModal('seatModal'); };
+                btnC.onclick=()=>{ db.pending.push({show,name:s.name,phone:s.phone,type:s.type,method:s.method,manager:s.manager,isOverflow:false}); delete db.seats[seatId]; saveData(); closeModal('seatModal'); };
+                modal.classList.remove('hidden');
+            };
+        } else {
+            div.classList.add('empty');
+            if(isVIPZone(row,num)) div.classList.add('vip-zone');
+            div.innerHTML=`<span class="seat-num">${num}</span>`;
+            div.onclick=()=>{ if(isBlockedEditMode){toggleBlockedSeat(show,row,num);return;} openAssignModal(seatId,row,num); };
+        }
+        return div;
+    }
+
+    window.openAssignModal = function(seatId, rowStr, numStr) {
+        const show=document.getElementById('viewShowtime').value;
+        document.getElementById('assignModalTitle').innerText='🎫 '+rowStr+'열 '+numStr+'번 좌석 배정';
+        const listDiv=document.getElementById('assignModalList'); listDiv.innerHTML='';
+        let has=false;
+        db.pending.forEach((res,idx)=>{
+            if(res.show!==show) return; has=true;
+            const d=document.createElement('div'); d.className='res-item assign-item'; d.style.cursor='pointer'; d.style.marginBottom='8px';
+            if(res.type==='후원/CMS'||res.type==='후원')d.classList.add('sponsor');else if(res.type==='VIP')d.classList.add('vip');else if(res.type==='단원/STAFF')d.classList.add('staff');
+            let bc=res.type==='후원/CMS'||res.type==='후원'?'badge-sponsor':res.type==='VIP'?'badge-vip':res.type==='단원/STAFF'?'badge-staff':'badge-normal';
+            d.innerHTML=`<div class="res-top"><span class="res-name">${res.name} <span class="res-badge ${bc}">${res.type}</span>${res.isOverflow?'<span class="res-badge" style="background:#e74c3c;color:white;margin-left:4px">초과대기</span>':''}</span></div><div class="res-meta"><span>📞 ${res.phone}</span><span>담당: ${res.manager}</span></div>`;
+            d.onclick=()=>{ db.seats[seatId]={name:res.name,phone:res.phone,type:res.type,method:res.method,manager:res.manager,pickedUp:false}; db.pending.splice(idx,1); saveData(); closeModal('assignModal'); };
+            listDiv.appendChild(d);
+        });
+        if(!has) listDiv.innerHTML='<div class="res-empty" style="padding:30px">해당 회차에 미배정 내역이 없습니다.<br><br>좌측 탭에서 신규 예약을 먼저 입력해주세요.</div>';
+        document.getElementById('assignModal').classList.remove('hidden');
+    };
+
+    window.closeModal = function(id) { document.getElementById(id).classList.add('hidden'); currentEditTarget=null; };
+
+    function renderDashboard() {
+        const tbody=document.getElementById('dashboardTbody'); tbody.innerHTML='';
+        let sT=0,sR=0,sC=0;
+        const info={1:"5/30 (목) 19:00",2:"5/31 (금) 14:00",3:"5/31 (금) 18:00",4:"6/06 (목) 19:00",5:"6/07 (금) 14:00",6:"6/07 (금) 18:00",7:"6/13 (목) 19:00"};
+        for(let show=1;show<=7;show++){
+            let a=0,p=0,c=0;
+            db.pending.forEach(x=>{if(parseInt(x.show)===show)p++;});
+            Object.keys(db.seats).forEach(k=>{if(k.startsWith(show+'-')){a++;if(db.seats[k].pickedUp)c++;}});
+            let total=a+p,u=getUsableSeats(show),rem=Math.max(0,u-total);
+            let rr=((total/u)*100).toFixed(1),cr=total>0?((c/total)*100).toFixed(1):"0.0";
+            sT+=u;sR+=total;sC+=c;
+            let bc=rr>=90?'high':rr>=50?'medium':'';
+            const tr=document.createElement('tr');
+            tr.innerHTML=`<td><strong>${show}회차</strong></td><td>${info[show]}</td><td>${u}</td><td style="color:var(--primary);font-weight:bold;">${total}</td><td style="color:var(--accent);font-weight:bold;">${rem}</td><td><div class="progress-bar-bg"><div class="progress-bar-fill ${bc}" style="width:${Math.min(rr,100)}%"></div></div><span style="font-weight:600">${rr}%</span></td><td style="color:var(--success);font-weight:bold;">${c}</td><td><span style="font-weight:600;color:var(--text2)">${cr}%</span></td>`;
+            tbody.appendChild(tr);
+        }
+        const tr=document.createElement('tr'); tr.style.borderTop='2px solid var(--primary-dark)';
+        tr.innerHTML=`<td colspan="2" style="font-weight:bold;font-size:14px;color:var(--primary-dark)">총계</td><td style="font-weight:bold">${sT}</td><td style="font-weight:bold;color:var(--primary)">${sR}</td><td style="font-weight:bold;color:var(--accent)">${sT-sR}</td><td style="font-weight:bold">${((sR/sT)*100).toFixed(1)}%</td><td style="font-weight:bold;color:var(--success)">${sC}</td><td style="font-weight:bold">${sR>0?((sC/sR)*100).toFixed(1):"0.0"}%</td>`;
+        tbody.appendChild(tr);
+    }
+
+    window.renderTotalList = function() {
+        const fs=document.getElementById('filterShowtime').value, fk=document.getElementById('filterKeyword').value.trim().toLowerCase();
+        const tbody=document.getElementById('totalListTbody'); tbody.innerHTML=''; let has=false;
+        for(let show=1;show<=7;show++){
+            if(fs!=='all'&&parseInt(fs)!==show) continue;
+            const groups=buildGroups(String(show));
+            groups.forEach(g=>{
+                if(fk&&!g.name.toLowerCase().includes(fk)&&!g.phone.includes(fk)) return;
+                has=true;
+                const tr=document.createElement('tr');
+                let sh=g.seats.length>0?'<div class="seat-badge-container">'+g.seats.map(s=>`<button class="seat-check-btn ${s.pickedUp?'is-checked':''}" onclick="toggleCheckInFromList('${s.id}')">${s.label2}</button>`).join('')+'</div>':'<span style="color:var(--text3)">미배정</span>';
+                let st=g.overflowCount>0&&g.assigned===0?'대기예매(매진)':g.overflowCount>0&&g.assigned>0?'일부 대기예매':'대기중';
+                let stHtml=g.assigned>0&&g.assigned===g.pickedUpCount?'<span class="status-complete">전원 입장완료</span>':g.assigned>0?(g.pickedUpCount>0?'<span class="status-pending" style="color:var(--accent)">일부 입장완료</span>':'<span class="status-pending">입장 전</span>'):`<span style="color:#d35400;font-weight:bold">${st}</span>`;
+                let bc=g.type==='일반'?'background:#e3f2fd;color:#1976d2':g.type==='후원/CMS'||g.type==='후원'?'background:#e8f5e9;color:#388e3c':g.type==='VIP'?'background:#f3e5f5;color:#8e24aa':'background:#fff3e0;color:#f57c00';
+                tr.innerHTML=`<td><strong>${show}회차</strong></td><td style="font-weight:bold">${g.name}</td><td>${g.phone}</td><td><span class="badge" style="${bc}">${g.type}</span></td><td style="font-weight:bold">${g.total}매</td><td>${g.assigned} / ${g.pending}</td><td style="text-align:left">${sh}</td><td>${g.method}</td><td>${g.manager}</td><td>${stHtml}</td>`;
+                tbody.appendChild(tr);
+            });
+        }
+        if(!has) tbody.innerHTML='<tr><td colspan="10" style="padding:40px;color:var(--text3)">조건에 맞는 예매 내역이 없습니다.</td></tr>';
+    };
+
+    window.renderWaitlist = function() {
+        const show=document.getElementById('waitlistShowtime').value, tbody=document.getElementById('waitlistTbody');
+        tbody.innerHTML=''; const wg=[]; let qi=1;
+        db.pending.forEach(p=>{
+            if(parseInt(p.show)!==parseInt(show)) return;
+            const k=p.name+'_'+p.phone, eg=wg.find(g=>g.key===k);
+            if(eg){eg.count++;if(p.isOverflow)eg.overflowCount++;}
+            else wg.push({key:k,show:p.show,name:p.name,phone:p.phone,type:p.type,manager:p.manager,count:1,overflowCount:p.isOverflow?1:0,queueRank:qi++});
+        });
+        if(wg.length===0){tbody.innerHTML='<tr><td colspan="8" style="padding:40px;color:var(--text3)">대기 중인 예매자가 없습니다.</td></tr>';return;}
+        wg.forEach(g=>{
+            const tr=document.createElement('tr');
+            let bc=g.type==='일반'?'background:#e3f2fd;color:#1976d2':g.type==='후원/CMS'||g.type==='후원'?'background:#e8f5e9;color:#388e3c':g.type==='VIP'?'background:#f3e5f5;color:#8e24aa':'background:#fff3e0;color:#f57c00';
+            tr.innerHTML=`<td><span class="queue-badge">대기 ${g.queueRank}번</span></td><td><strong>${g.show}회차</strong></td><td style="font-weight:bold;font-size:14px">${g.name}</td><td>${g.phone}</td><td><span class="badge" style="${bc}">${g.type}</span></td><td style="font-weight:bold;color:var(--primary)">${g.count}매</td><td>${g.manager}</td><td>${g.overflowCount>0?'<span style="color:#c0392b;font-weight:bold">초과 대기예매</span>':'<span style="color:#f39c12;font-weight:bold">좌석 미배정</span>'}</td>`;
+            tbody.appendChild(tr);
+        });
+    };
+
+    window.exportToExcel = function() {
+        let csv="\uFEFF회차,예약자명,연락처,총매수,배정완료,미배정,배정좌석,구분,예매방법,담당자,수령상태\n", has=false;
+        for(let show=1;show<=7;show++){
+            const groups=buildGroups(String(show));
+            groups.forEach(g=>{
+                has=true;
+                const ss=g.seats.length>0?'"'+g.seats.map(s=>s.label.slice(0,1)+'열 '+s.label.slice(1)+'번').join(', ')+'"':'배정대기';
+                const ps=g.assigned>0&&g.assigned===g.pickedUpCount?'입장완료':g.assigned>0?'일부수령/대기':'대기';
+                csv+=`${show}회차,${g.name},${g.phone},${g.total},${g.assigned},${g.pending},${ss},${g.type},${g.method},${g.manager},${ps}\n`;
+            });
+        }
+        if(!has){alert("다운로드할 예매 내역이 없습니다.");return;}
+        const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
+        const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='2026_빛의여로_통합예매리스트.csv';
+        document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    };
+</script>
+</body>
+</html>
