@@ -320,6 +320,55 @@
         .progress-bar-fill.medium { background: var(--accent); }
 
         @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* ==========================================
+           📱 모바일 반응형
+        ========================================== */
+        @media (max-width: 768px) {
+            #syncBanner { font-size: 11px; height: 30px; padding: 0 8px; text-align: center; }
+            .header { padding: 10px 14px; margin-top: 30px; flex-wrap: wrap; gap: 8px; }
+            .header-title { font-size: 16px; }
+            .header-badge { font-size: 10px; padding: 2px 8px; }
+            .header-right { width: 100%; justify-content: space-between; }
+            .user-info { font-size: 11px; }
+            #lastSyncTime { display: none; }
+            .logout-btn { font-size: 11px; padding: 4px 10px; }
+            .top-tabs { padding: 0 8px; gap: 0; }
+            .top-tab { padding: 10px 10px; font-size: 12px; }
+            .page { height: calc(100vh - 120px); }
+            #page-list, #page-dash, #page-wait { padding: 12px; }
+            #page-main { flex-direction: column; overflow-y: auto; }
+            .sidebar { width: 100%; min-width: unset; border-right: none; border-bottom: 1px solid var(--border); max-height: 420px; }
+            .main { padding: 12px; gap: 12px; overflow-y: visible; }
+            .stats-row { grid-template-columns: repeat(2, 1fr); gap: 6px; }
+            .stat-val { font-size: 15px; }
+            .stat-label { font-size: 10px; }
+            .form-row-2 { grid-template-columns: 1fr; }
+            .form-section { padding: 12px; }
+            .main-header { flex-direction: column; align-items: flex-start; gap: 8px; }
+            .main-title { font-size: 15px; flex-wrap: wrap; }
+            .legend { gap: 8px; padding: 6px 10px; }
+            .legend-item { font-size: 11px; }
+            .seat-map-wrapper { padding: 12px; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+            .seat-grid { min-width: 900px; }
+            .modal { padding: 18px; max-width: 100%; border-radius: 12px; }
+            .modal-actions { flex-direction: column; }
+            .modal-actions button { min-width: 100%; }
+            .filter-bar { padding: 10px 12px; gap: 10px; flex-direction: column; align-items: flex-start; }
+            .filter-item { width: 100%; }
+            .filter-item select, .filter-item input { width: 100%; }
+            .data-table { font-size: 12px; min-width: 700px; }
+            .data-table th, .data-table td { padding: 8px 6px; }
+            .btn-sm { padding: 6px 10px; font-size: 12px; }
+            .login-box { padding: 32px 24px; margin: 16px; border-radius: 16px; }
+            .login-title { font-size: 20px; }
+            .res-actions { gap: 6px; }
+            .res-actions .btn-sm { flex: 1; text-align: center; }
+        }
+        @media (max-width: 380px) {
+            .top-tab { padding: 8px 6px; font-size: 11px; }
+            .header-title { font-size: 14px; }
+        }
     </style>
 </head>
 <body>
