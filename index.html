@@ -682,7 +682,7 @@
         <span class="tab-icon">📝</span>예약입력
     </button>
     <button class="mobile-tab-btn" id="mob-btn-reslist" onclick="switchMobileTab('reslist')">
-        <span class="tab-icon">📋</span>예매리스트
+        <span class="tab-icon">📋</span>회차예매
     </button>
     <button class="mobile-tab-btn" id="mob-btn-seat" onclick="switchMobileTab('seat')">
         <span class="tab-icon">🎫</span>좌석배치도
@@ -691,7 +691,10 @@
         <span class="tab-icon">📊</span>전체현황
     </button>
     <button class="mobile-tab-btn" id="mob-btn-list" onclick="switchMobileTab('list')">
-        <span class="tab-icon">🗂️</span>예매리스트
+        <span class="tab-icon">🗂️</span>통합리스트
+    </button>
+    <button class="mobile-tab-btn" id="mob-btn-wait" onclick="switchMobileTab('wait')">
+        <span class="tab-icon">⏳</span>대기자
     </button>
 </div>
 
@@ -755,7 +758,7 @@
             <span style="color:#f57c00;">🟠 단원</span><span style="color:#9e9e9e;">⬛ 불가석</span>
         </div>
     </div>
-    <div class="seat-map-wrapper" style="margin:0;border-radius:0;border-left:none;border-right:none;">
+    <div class="seat-map-wrapper" style="margin:0;border-radius:0;border-left:none;border-right:none;padding-left:48px;">
         <div class="stage-label">STAGE</div>
         <div class="seat-grid" id="mob-seatingChart"></div>
         <div class="console-label">CONSOLE</div>
@@ -791,6 +794,22 @@
             <input type="text" id="mob-filterKeyword" placeholder="이름/연락처 검색" onkeyup="renderTotalList()" style="flex:1;padding:8px;border:1px solid var(--border);border-radius:6px;font-size:13px;">
         </div>
         <div class="res-list" id="mob-totalList"></div>
+    </div>
+</div>
+
+<!-- 모바일 패널 6: 대기자 명단 -->
+<div class="mobile-panel" id="mob-panel-wait">
+    <div style="padding:12px;">
+        <div style="font-size:15px;font-weight:700;color:var(--primary);margin-bottom:12px;">⏳ 대기자 명단</div>
+        <div style="margin-bottom:10px;">
+            <select id="mob-waitShowtime" onchange="renderMobileWaitlist()" style="width:100%;padding:10px;font-size:14px;border-radius:8px;border:1px solid var(--border);font-weight:bold;">
+                <option value="1">1회차 (5/30 19:00)</option><option value="2">2회차 (5/31 14:00)</option>
+                <option value="3">3회차 (5/31 18:00)</option><option value="4">4회차 (6/06 19:00)</option>
+                <option value="5">5회차 (6/07 14:00)</option><option value="6">6회차 (6/07 18:00)</option>
+                <option value="7">7회차 (6/13 19:00)</option>
+            </select>
+        </div>
+        <div id="mob-waitList"></div>
     </div>
 </div>
 
@@ -1402,7 +1421,7 @@
     };
 
     window.switchMobileTab = function(tab) {
-        const tabs = ['form','reslist','seat','dash','list'];
+        const tabs = ['form','reslist','seat','dash','list','wait'];
         tabs.forEach(t => {
             const btn = document.getElementById('mob-btn-'+t);
             const panel = document.getElementById('mob-panel-'+t);
@@ -1418,6 +1437,7 @@
         if(tab==='dash') renderMobileDashboard();
         if(tab==='list') renderMobileTotalList();
         if(tab==='reslist') renderMobileResList();
+        if(tab==='wait') renderMobileWaitlist();
     };
 
     window.mobAddReservation = function() {
@@ -1572,12 +1592,42 @@
                 else if(id==='dash') renderMobileDashboard();
                 else if(id==='reslist') renderMobileResList();
                 else if(id==='list') renderMobileTotalList();
+                else if(id==='wait') renderMobileWaitlist();
             }
             // 모바일 회차 셀렉트 동기화
             const mobSel = document.getElementById('mob-viewShowtime');
             if(mobSel) mobSel.value = document.getElementById('viewShowtime').value;
         }
     };
+
+    function renderMobileWaitlist() {
+        const show = document.getElementById('mob-waitShowtime') ? document.getElementById('mob-waitShowtime').value : '1';
+        const listDiv = document.getElementById('mob-waitList');
+        listDiv.innerHTML='';
+        const wg=[]; let qi=1;
+        db.pending.forEach(p=>{
+            if(parseInt(p.show)!==parseInt(show))return;
+            const k=p.name+'_'+p.phone, eg=wg.find(g=>g.key===k);
+            if(eg){eg.count++;if(p.isOverflow)eg.overflowCount++;}
+            else wg.push({key:k,show:p.show,name:p.name,phone:p.phone,type:p.type,manager:p.manager,count:1,overflowCount:p.isOverflow?1:0,queueRank:qi++});
+        });
+        if(wg.length===0){listDiv.innerHTML='<div class="res-empty">현재 대기 중인 예매자가 없습니다.</div>';return;}
+        wg.forEach(g=>{
+            const div=document.createElement('div');
+            div.className='res-item'+(g.type==='후원/CMS'||g.type==='후원'?' sponsor':g.type==='VIP'?' vip':g.type==='단원/STAFF'?' staff':'');
+            let bc=g.type==='후원/CMS'||g.type==='후원'?'badge-sponsor':g.type==='VIP'?'badge-vip':g.type==='단원/STAFF'?'badge-staff':'badge-normal';
+            let stHtml=g.overflowCount>0?'<span style="color:#c0392b;font-weight:bold">초과 대기예매</span>':'<span style="color:#f39c12;font-weight:bold">좌석 미배정</span>';
+            div.innerHTML=`
+                <div class="res-top">
+                    <span class="res-name"><span class="queue-badge">대기 ${g.queueRank}번</span> ${g.name} <span class="res-badge ${bc}">${g.type}</span></span>
+                </div>
+                <div class="res-meta">
+                    <span>📞 ${g.phone} | 🎟️ ${g.count}매 | 담당: ${g.manager}</span>
+                </div>
+                <div style="margin-top:4px;">${stHtml}</div>`;
+            listDiv.appendChild(div);
+        });
+    }
 
     // mob-filterShowtime/keyword → renderTotalList 연동
     const _origRenderTotalList = window.renderTotalList;
