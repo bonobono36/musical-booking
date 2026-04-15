@@ -322,6 +322,53 @@
         @keyframes spin { to { transform: rotate(360deg); } }
 
         /* ==========================================
+           💬 커스텀 다이얼로그 (alert/confirm/prompt 대체)
+        ========================================== */
+        #customDialogOverlay {
+            position: fixed; inset: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 99999;
+            display: flex; align-items: center; justify-content: center;
+            padding: 20px;
+        }
+        #customDialogBox {
+            background: white;
+            border-radius: 16px;
+            padding: 24px;
+            width: 100%; max-width: 360px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        #customDialogTitle {
+            font-size: 15px; font-weight: 700;
+            color: var(--primary-dark);
+            margin-bottom: 12px;
+        }
+        #customDialogMsg {
+            font-size: 14px; color: var(--text2);
+            line-height: 1.6; margin-bottom: 16px;
+            white-space: pre-wrap;
+        }
+        #customDialogInput {
+            width: 100%; padding: 10px 14px;
+            border: 1.5px solid var(--border);
+            border-radius: 8px; font-size: 15px;
+            font-family: inherit; margin-bottom: 16px;
+            outline: none;
+        }
+        #customDialogInput:focus { border-color: var(--primary); }
+        #customDialogBtns {
+            display: flex; gap: 8px;
+        }
+        #customDialogBtns button {
+            flex: 1; padding: 11px;
+            border: none; border-radius: 8px;
+            font-size: 14px; font-weight: 700;
+            cursor: pointer; font-family: inherit;
+        }
+        #customDialogConfirmBtn { background: var(--primary); color: white; }
+        #customDialogCancelBtn { background: var(--surface2); color: var(--text); border: 1px solid var(--border) !important; }
+
+        /* ==========================================
            📱 모바일 전용 하단 탭바
         ========================================== */
         .mobile-tab-bar {
@@ -467,6 +514,21 @@
     </style>
 </head>
 <body>
+
+<!-- ==========================================
+     💬 커스텀 다이얼로그
+========================================== -->
+<div id="customDialogOverlay" style="display:none;">
+    <div id="customDialogBox">
+        <div id="customDialogTitle"></div>
+        <div id="customDialogMsg"></div>
+        <input type="number" id="customDialogInput" style="display:none;" min="1">
+        <div id="customDialogBtns">
+            <button id="customDialogCancelBtn" style="display:none;" onclick="_dialogCancel()">취소</button>
+            <button id="customDialogConfirmBtn" onclick="_dialogConfirm()">확인</button>
+        </div>
+    </div>
+</div>
 
 <!-- ==========================================
      🔐 로그인 화면
@@ -889,6 +951,71 @@
     const auth     = getAuth(app);
 
     // ============================================================
+    // 💬 커스텀 다이얼로그 (alert / confirm / prompt 대체)
+    // ============================================================
+    let _dialogResolve = null;
+
+    function _showDialog({title='', msg='', type='alert', defaultVal=''}) {
+        return new Promise(resolve => {
+            _dialogResolve = resolve;
+            const overlay = document.getElementById('customDialogOverlay');
+            document.getElementById('customDialogTitle').textContent = title;
+            document.getElementById('customDialogMsg').textContent = msg;
+            const input = document.getElementById('customDialogInput');
+            const cancelBtn = document.getElementById('customDialogCancelBtn');
+            const confirmBtn = document.getElementById('customDialogConfirmBtn');
+
+            if(type === 'prompt') {
+                input.style.display = 'block';
+                input.value = defaultVal;
+                cancelBtn.style.display = 'block';
+                confirmBtn.textContent = '확인';
+                setTimeout(() => input.focus(), 100);
+            } else if(type === 'confirm') {
+                input.style.display = 'none';
+                cancelBtn.style.display = 'block';
+                confirmBtn.textContent = '확인';
+            } else {
+                input.style.display = 'none';
+                cancelBtn.style.display = 'none';
+                confirmBtn.textContent = '확인';
+            }
+            overlay.style.display = 'flex';
+        });
+    }
+
+    window._dialogConfirm = function() {
+        document.getElementById('customDialogOverlay').style.display = 'none';
+        const input = document.getElementById('customDialogInput');
+        if(_dialogResolve) {
+            if(input.style.display !== 'none') _dialogResolve(input.value);
+            else _dialogResolve(true);
+        }
+        _dialogResolve = null;
+    };
+
+    window._dialogCancel = function() {
+        document.getElementById('customDialogOverlay').style.display = 'none';
+        if(_dialogResolve) _dialogResolve(null);
+        _dialogResolve = null;
+    };
+
+    // Enter 키로 확인
+    document.getElementById('customDialogInput').addEventListener('keydown', e => {
+        if(e.key === 'Enter') window._dialogConfirm();
+    });
+
+    async function _alert(msg, title='알림') {
+        await _showDialog({title, msg, type:'alert'});
+    }
+    async function _confirm(msg, title='확인') {
+        return await _showDialog({title, msg, type:'confirm'});
+    }
+    async function _prompt(msg, defaultVal='', title='입력') {
+        return await _showDialog({title, msg, type:'prompt', defaultVal});
+    }
+
+    // ============================================================
     // 전역 상태
     // ============================================================
     const TOTAL_SEATS = 298;
@@ -926,7 +1053,7 @@
     };
 
     window.doLogout = async function() {
-        if (!confirm('로그아웃 하시겠습니까?')) return;
+        if (!await _confirm('로그아웃 하시겠습니까?', '로그아웃')) return;
         await signOut(auth);
     };
 
@@ -993,7 +1120,7 @@
             updateLastSync();
         } catch(e) {
             setSyncStatus('', '🔴 저장 실패: ' + e.message);
-            alert('저장에 실패했습니다: ' + e.message);
+            await _alert('저장에 실패했습니다: ' + e.message, '저장 실패');
         } finally {
             isSaving = false;
         }
@@ -1033,7 +1160,7 @@
     // ============================================================
     // 전역 함수 등록
     // ============================================================
-    window.saveAppTitle = function() {
+    window.saveAppTitle = async function() {
         let t = document.getElementById('editableTitle').innerText.trim();
         if (!t) t = '2026 빛의 여로';
         db.title = t;
@@ -1067,19 +1194,19 @@
         document.getElementById('tab-'+tab).classList.remove('hidden');
     };
 
-    window.toggleEditMode = function() {
+    window.toggleEditMode = async function() {
         isBlockedEditMode = !isBlockedEditMode;
         const btn = document.getElementById('toggleEditModeBtn');
         btn.innerText = isBlockedEditMode ? '🛠 불가석 지정 모드: 켜짐 (끄기)' : '🛠 불가석 지정 모드: 켜기';
         btn.className = isBlockedEditMode ? 'btn-sm btn-sm-blue' : 'btn-sm btn-sm-red';
-        if(isBlockedEditMode) alert('불가석 직접 지정 모드가 활성화되었습니다.\n좌석을 클릭하면 불가석으로 추가/해제됩니다.');
+        if(isBlockedEditMode) await _alert('불가석 직접 지정 모드가 활성화되었습니다.\n좌석을 클릭하면 불가석으로 추가/해제됩니다.', '불가석 모드 켜짐');
     };
 
     window.toggleCheckInFromList = function(seatId) {
         if(db.seats[seatId]) { db.seats[seatId].pickedUp = !db.seats[seatId].pickedUp; saveData(); }
     };
 
-    window.toggleBlockedSeat = function(show, row, num) {
+    window.toggleBlockedSeat = async function(show, row, num) {
         let seatName = row + num, seatId = show+'-'+row+'-'+num;
         let list = [...(BLOCKED_SEATS_MAP[show] || [])];
         let idx = list.indexOf(seatName);
@@ -1087,7 +1214,7 @@
             list.splice(idx, 1);
         } else {
             if (db.seats[seatId]) {
-                if (!confirm(row+'열 '+num+'번은 이미 배정되어 있습니다.\n강제로 불가석 처리하고 예매자를 대기 상태로 되돌리시겠습니까?')) return;
+                if (!await _confirm(row+'열 '+num+'번은 이미 배정되어 있습니다.\n강제로 불가석 처리하고 예매자를 대기 상태로 되돌리시겠습니까?', '불가석 지정')) return;
                 let s = db.seats[seatId];
                 db.pending.push({ show, name:s.name, phone:s.phone, type:s.type, method:s.method, manager:s.manager, isOverflow:false });
                 delete db.seats[seatId];
@@ -1107,7 +1234,7 @@
         if(document.getElementById('page-wait').classList.contains('active')) renderWaitlist();
     };
 
-    window.addReservation = function() {
+    window.addReservation = async function() {
         const show = document.getElementById('viewShowtime').value;
         const name = document.getElementById('resName').value.trim();
         const phone = document.getElementById('resPhone').value;
@@ -1115,7 +1242,7 @@
         const method = document.getElementById('resMethod').value;
         const manager = document.getElementById('resManager').value;
         const count = parseInt(document.getElementById('resCount').value);
-        if (!name || phone === '010-' || phone.length < 12) { alert("이름과 정확한 연락처를 입력해주세요."); return; }
+        if (!name || phone === '010-' || phone.length < 12) { await _alert("이름과 정확한 연락처를 입력해주세요."); return; }
 
         let assigned=0, pendingCount=0;
         db.pending.forEach(p => { if(parseInt(p.show)===parseInt(show)) pendingCount++; });
@@ -1126,7 +1253,7 @@
             let msg = remaining > 0
                 ? "잔여 가용 좌석("+remaining+"석)보다 예약 매수("+count+"매)가 많습니다.\n초과 인원은 '대기 예매'로 접수됩니다.\n\n진행하시겠습니까?"
                 : "전석 매진 상태입니다.\n'대기 예매'로 접수하시겠습니까?";
-            if (!confirm(msg)) return;
+            if (!await _confirm(msg, '매진 안내')) return;
         }
         for (let i=0; i<count; i++) {
             db.pending.push({ show, name, phone, type, method, manager, isOverflow: (totalReserved+i+1) > getUsableSeats(show) });
@@ -1134,7 +1261,7 @@
         document.getElementById('resName').value = '';
         document.getElementById('resPhone').value = '010-';
         saveData();
-        alert(name+'님 '+count+'매가 접수되었습니다.');
+        await _alert(name+'님 '+count+'매가 접수되었습니다.', '접수 완료');
     };
 
     function updateDashboard() {
@@ -1172,29 +1299,29 @@
         document.getElementById('editModal').classList.remove('hidden');
     };
 
-    window.saveEditedInfo = function() {
+    window.saveEditedInfo = async function() {
         if (!currentEditTarget) return;
         const nName=document.getElementById('editName').value.trim(), nPhone=document.getElementById('editPhone').value.trim();
         const nType=document.getElementById('editType').value, nMethod=document.getElementById('editMethod').value, nManager=document.getElementById('editManager').value;
-        if (!nName||!nPhone||nPhone.length<12) { alert("이름과 연락처를 모두 입력해주세요."); return; }
+        if (!nName||!nPhone||nPhone.length<12) { await _alert("이름과 연락처를 모두 입력해주세요."); return; }
         const {show,name:oN,phone:oP} = currentEditTarget;
         db.pending.forEach(p => { if(p.show===show&&p.name===oN&&p.phone===oP) Object.assign(p,{name:nName,phone:nPhone,type:nType,method:nMethod,manager:nManager}); });
         Object.keys(db.seats).forEach(id => { if(id.startsWith(show+'-')) { let s=db.seats[id]; if(s.name===oN&&s.phone===oP) Object.assign(s,{name:nName,phone:nPhone,type:nType,method:nMethod,manager:nManager}); } });
         saveData(); closeModal('editModal');
     };
 
-    window.cancelEntireReservation = function(show, name, phone) {
-        if(!confirm('['+name+']님의 해당 회차 예매를 완전히 취소하시겠습니까?')) return;
+    window.cancelEntireReservation = async function(show, name, phone) {
+        if(!await _confirm('['+name+']님의 해당 회차 예매를 완전히 취소하시겠습니까?\n(배정된 좌석과 대기열 기록이 모두 삭제됩니다)', '전체 취소')) return;
         db.pending = db.pending.filter(p => !(p.show===show&&p.name===name&&p.phone===phone));
         Object.keys(db.seats).forEach(k => { if(k.startsWith(show+'-')) { let s=db.seats[k]; if(s.name===name&&s.phone===phone) delete db.seats[k]; } });
-        saveData(); alert("예매가 전체 취소되었습니다.");
+        saveData(); await _alert("예매가 전체 취소되었습니다.", "취소 완료");
     };
 
-    window.changeTicketCount = function(show, name, phone, type, method, manager, currentTotal, currentPending) {
-        let input = prompt('['+name+']님의 현재 예매는 총 '+currentTotal+'매입니다.\n변경하실 최종 총 매수를 입력해주세요:', currentTotal);
+    window.changeTicketCount = async function(show, name, phone, type, method, manager, currentTotal, currentPending) {
+        let input = await _prompt('['+name+']님의 현재 예매는 총 '+currentTotal+'매입니다.\n변경하실 최종 총 매수를 숫자로 입력해주세요.', currentTotal, '매수 변경');
         if(input===null||input.trim()==='') return;
         let newCount = parseInt(input);
-        if(isNaN(newCount)||newCount<=0) { alert("올바른 숫자를 입력해주세요."); return; }
+        if(isNaN(newCount)||newCount<=0) { await _alert("올바른 숫자를 입력해주세요."); return; }
         if(newCount===currentTotal) return;
         if(newCount > currentTotal) {
             let add = newCount-currentTotal;
@@ -1202,15 +1329,15 @@
             db.pending.forEach(p=>{if(parseInt(p.show)===parseInt(show))pCount++;});
             Object.keys(db.seats).forEach(k=>{if(k.startsWith(show+'-'))assigned++;});
             let total=assigned+pCount, rem=getUsableSeats(show)-total;
-            if(add>rem&&!confirm(rem>0?"잔여 가용 좌석("+rem+"석)보다 추가 매수("+add+"매)가 많습니다.\n초과 인원은 '대기 예매'로 접수됩니다.\n진행하시겠습니까?":"전석 매진 상태입니다.\n추가 인원을 '대기 예매'로 접수하시겠습니까?")) return;
+            if(add>rem&&!await _confirm(rem>0?"잔여 가용 좌석("+rem+"석)보다 추가 매수("+add+"매)가 많습니다.\n초과 인원은 대기 예매로 접수됩니다.\n진행하시겠습니까?":"전석 매진 상태입니다.\n추가 인원을 대기 예매로 접수하시겠습니까?", "매수 추가")) return;
             for(let i=0;i<add;i++) db.pending.push({show,name,phone,type,method,manager,isOverflow:(total+i+1)>getUsableSeats(show)});
-            saveData(); alert(add+'매가 추가 접수되었습니다.');
+            saveData(); await _alert(add+'매가 추가 접수되었습니다.', '추가 완료');
         } else {
             let reduce = currentTotal-newCount;
-            if(reduce>currentPending){alert('미배정 티켓이 '+currentPending+'매뿐입니다.\n먼저 좌석 배치도에서 [좌석 배정 취소]를 진행해주세요.');return;}
+            if(reduce>currentPending){await _alert('미배정 티켓이 '+currentPending+'매뿐입니다.\n먼저 좌석 배치도에서 좌석 배정 취소를 진행해주세요.', '변경 불가');return;}
             let removed=0;
             for(let i=db.pending.length-1;i>=0;i--){let p=db.pending[i];if(p.show===show&&p.name===name&&p.phone===phone){db.pending.splice(i,1);if(++removed===reduce)break;}}
-            saveData(); alert(reduce+'매가 취소(감소)되었습니다.');
+            saveData(); await _alert(reduce+'매가 취소(감소)되었습니다.', '변경 완료');
         }
     };
 
@@ -1393,7 +1520,7 @@
         });
     };
 
-    window.exportToExcel = function() {
+    window.exportToExcel = async function() {
         let csv="\uFEFF회차,예약자명,연락처,총매수,배정완료,미배정,배정좌석,구분,예매방법,담당자,수령상태\n", has=false;
         for(let show=1;show<=7;show++){
             const groups=buildGroups(String(show));
@@ -1404,7 +1531,7 @@
                 csv+=`${show}회차,${g.name},${g.phone},${g.total},${g.assigned},${g.pending},${ss},${g.type},${g.method},${g.manager},${ps}\n`;
             });
         }
-        if(!has){alert("다운로드할 예매 내역이 없습니다.");return;}
+        if(!has){await _alert("다운로드할 예매 내역이 없습니다.");return;}
         const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
         const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='2026_빛의여로_통합예매리스트.csv';
         document.body.appendChild(a); a.click(); document.body.removeChild(a);
@@ -1440,7 +1567,7 @@
         if(tab==='wait') renderMobileWaitlist();
     };
 
-    window.mobAddReservation = function() {
+    window.mobAddReservation = async function() {
         const show = document.getElementById('mob-viewShowtime').value;
         const name = document.getElementById('mob-resName').value.trim();
         const phone = document.getElementById('mob-resPhone').value;
@@ -1448,7 +1575,7 @@
         const method = document.getElementById('mob-resMethod').value;
         const manager = document.getElementById('mob-resManager').value;
         const count = parseInt(document.getElementById('mob-resCount').value);
-        if(!name||phone==='010-'||phone.length<12){alert("이름과 정확한 연락처를 입력해주세요.");return;}
+        if(!name||phone==='010-'||phone.length<12){await _alert("이름과 정확한 연락처를 입력해주세요.");return;}
 
         let assigned=0,pendingCount=0;
         db.pending.forEach(p=>{if(parseInt(p.show)===parseInt(show))pendingCount++;});
@@ -1457,7 +1584,7 @@
 
         if(count>remaining){
             let msg=remaining>0?"잔여 좌석("+remaining+"석)보다 예약 매수("+count+"매)가 많습니다.\n초과 인원은 '대기 예매'로 접수됩니다.\n\n진행하시겠습니까?":"전석 매진 상태입니다.\n'대기 예매'로 접수하시겠습니까?";
-            if(!confirm(msg))return;
+            if(!await _confirm(msg, '매진 안내'))return;
         }
         for(let i=0;i<count;i++){
             db.pending.push({show,name,phone,type,method,manager,isOverflow:(totalReserved+i+1)>getUsableSeats(show)});
@@ -1465,7 +1592,7 @@
         document.getElementById('mob-resName').value='';
         document.getElementById('mob-resPhone').value='010-';
         saveData();
-        alert(name+'님 '+count+'매가 접수되었습니다.');
+        await _alert(name+'님 '+count+'매가 접수되었습니다.', '접수 완료');
     };
 
     function renderMobileSeat() {
