@@ -322,54 +322,147 @@
         @keyframes spin { to { transform: rotate(360deg); } }
 
         /* ==========================================
-           📱 모바일 반응형
+           📱 모바일 전용 하단 탭바
         ========================================== */
+        .mobile-tab-bar {
+            display: none;
+        }
+
         @media (max-width: 768px) {
-            #syncBanner { font-size: 11px; height: 30px; padding: 0 8px; text-align: center; }
-            .header { padding: 10px 14px; margin-top: 30px; flex-wrap: wrap; gap: 8px; }
-            .header-title { font-size: 16px; }
+            /* 기본 레이아웃 */
+            body { overflow: hidden; }
+            #syncBanner { font-size: 11px; height: 28px; padding: 0 8px; text-align: center; }
+            .header { padding: 10px 14px; margin-top: 28px; flex-wrap: wrap; gap: 6px; }
+            .header-title { font-size: 15px; }
             .header-badge { font-size: 10px; padding: 2px 8px; }
             .header-right { width: 100%; justify-content: space-between; }
             .user-info { font-size: 11px; }
             #lastSyncTime { display: none; }
             .logout-btn { font-size: 11px; padding: 4px 10px; }
-            .top-tabs { padding: 0 8px; gap: 0; }
-            .top-tab { padding: 10px 10px; font-size: 12px; }
-            .page { height: auto; overflow: visible; }
-            .page.active { display: flex; }
-            #page-list, #page-dash, #page-wait { padding: 12px; display: flex; max-height: calc(100vh - 120px); overflow-y: auto; }
-            #page-main { flex-direction: column; overflow-y: auto; max-height: calc(100vh - 120px); }
-            .sidebar { width: 100%; min-width: unset; border-right: none; border-bottom: 1px solid var(--border); max-height: none; overflow: visible; flex-shrink: 0; }
-            .sidebar-content { max-height: 320px; overflow-y: auto; }
-            .main { padding: 12px; gap: 12px; overflow-y: auto; }
+
+            /* PC 상단 탭 숨기기 */
+            .top-tabs { display: none; }
+
+            /* 모바일 하단 탭바 */
+            .mobile-tab-bar {
+                display: flex;
+                position: fixed;
+                bottom: 0; left: 0; right: 0;
+                height: 60px;
+                background: white;
+                border-top: 1px solid var(--border);
+                box-shadow: 0 -2px 12px rgba(0,0,0,0.1);
+                z-index: 500;
+            }
+            .mobile-tab-btn {
+                flex: 1;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                gap: 3px;
+                background: none;
+                border: none;
+                cursor: pointer;
+                color: var(--text3);
+                font-size: 10px;
+                font-weight: 600;
+                font-family: inherit;
+                padding: 6px 4px;
+                transition: all 0.15s;
+            }
+            .mobile-tab-btn .tab-icon { font-size: 20px; line-height: 1; }
+            .mobile-tab-btn.active { color: var(--primary); }
+            .mobile-tab-btn.active .tab-icon { transform: translateY(-2px); }
+
+            /* 모바일 페이지 패널 */
+            .page {
+                display: none !important;
+                position: fixed;
+                top: 0; left: 0; right: 0;
+                bottom: 60px;
+                overflow-y: auto;
+                -webkit-overflow-scrolling: touch;
+                background: var(--surface2);
+                padding-top: 0;
+            }
+            .page.active { display: block !important; }
+
+            /* 모바일 전용 패널 (신규예약, 예매리스트, 좌석배치도) */
+            .mobile-panel {
+                display: none;
+                position: fixed;
+                top: 0; left: 0; right: 0;
+                bottom: 60px;
+                overflow-y: auto;
+                -webkit-overflow-scrolling: touch;
+                background: var(--surface2);
+            }
+            .mobile-panel.active { display: block; }
+
+            /* 헤더 높이에 맞게 패널 시작 위치 조정 */
+            .page, .mobile-panel {
+                padding-top: 0;
+                margin-top: 118px;
+            }
+
+            /* 모바일 페이지 내부 여백 */
+            #page-dash, #page-list, #page-wait {
+                flex-direction: column;
+                padding: 12px 12px 20px;
+            }
+
+            /* 사이드바/메인 숨기기 (모바일 패널로 대체) */
+            #page-main { display: none !important; }
+
+            /* 통계 카드 */
             .stats-row { grid-template-columns: repeat(2, 1fr); gap: 6px; }
             .stat-val { font-size: 15px; }
             .stat-label { font-size: 10px; }
+
+            /* 폼 */
             .form-row-2 { grid-template-columns: 1fr; }
             .form-section { padding: 12px; }
+
+            /* 헤더 영역 */
             .main-header { flex-direction: column; align-items: flex-start; gap: 8px; }
             .main-title { font-size: 15px; flex-wrap: wrap; }
             .legend { gap: 8px; padding: 6px 10px; }
             .legend-item { font-size: 11px; }
-            .seat-map-wrapper { padding: 12px; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+            /* 좌석 배치도 */
+            .seat-map-wrapper { padding: 12px; overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: 0; }
             .seat-grid { min-width: 900px; }
+
+            /* 모달 */
             .modal { padding: 18px; max-width: 100%; border-radius: 12px; }
             .modal-actions { flex-direction: column; }
             .modal-actions button { min-width: 100%; }
+
+            /* 필터바 */
             .filter-bar { padding: 10px 12px; gap: 10px; flex-direction: column; align-items: flex-start; }
             .filter-item { width: 100%; }
             .filter-item select, .filter-item input { width: 100%; }
+
+            /* 테이블 */
             .data-table { font-size: 12px; min-width: 700px; }
             .data-table th, .data-table td { padding: 8px 6px; }
+
+            /* 버튼 */
             .btn-sm { padding: 6px 10px; font-size: 12px; }
+
+            /* 로그인 */
             .login-box { padding: 32px 24px; margin: 16px; border-radius: 16px; }
             .login-title { font-size: 20px; }
+
+            /* 예약 리스트 */
             .res-actions { gap: 6px; }
             .res-actions .btn-sm { flex: 1; text-align: center; }
         }
         @media (max-width: 380px) {
-            .top-tab { padding: 8px 6px; font-size: 11px; }
-            .header-title { font-size: 14px; }
+            .mobile-tab-btn { font-size: 9px; }
+            .mobile-tab-btn .tab-icon { font-size: 18px; }
+            .header-title { font-size: 13px; }
         }
     </style>
 </head>
@@ -578,6 +671,126 @@
             </tr></thead>
             <tbody id="waitlistTbody"></tbody>
         </table>
+    </div>
+</div>
+
+<!-- ==========================================
+     📱 모바일 전용 하단 탭바
+========================================== -->
+<div class="mobile-tab-bar">
+    <button class="mobile-tab-btn active" id="mob-btn-form" onclick="switchMobileTab('form')">
+        <span class="tab-icon">📝</span>예약입력
+    </button>
+    <button class="mobile-tab-btn" id="mob-btn-reslist" onclick="switchMobileTab('reslist')">
+        <span class="tab-icon">📋</span>예매리스트
+    </button>
+    <button class="mobile-tab-btn" id="mob-btn-seat" onclick="switchMobileTab('seat')">
+        <span class="tab-icon">🎫</span>좌석배치도
+    </button>
+    <button class="mobile-tab-btn" id="mob-btn-dash" onclick="switchMobileTab('dash')">
+        <span class="tab-icon">📊</span>전체현황
+    </button>
+    <button class="mobile-tab-btn" id="mob-btn-list" onclick="switchMobileTab('list')">
+        <span class="tab-icon">🗂️</span>예매리스트
+    </button>
+</div>
+
+<!-- 모바일 패널 1: 신규 예약 입력 -->
+<div class="mobile-panel active" id="mob-panel-form">
+    <div style="padding: 14px;">
+        <div style="font-size:15px;font-weight:700;color:var(--primary);margin-bottom:12px;">📝 신규 예약 입력</div>
+        <div style="margin-bottom:10px;">
+            <label style="font-size:12px;font-weight:700;color:var(--text2);display:block;margin-bottom:4px;">조회 회차</label>
+            <select id="mob-viewShowtime" onchange="syncShowtime(this.value)" style="width:100%;padding:10px;font-size:14px;border-radius:8px;border:1px solid var(--border);font-weight:bold;">
+                <option value="1">1회차 (5/30 19:00)</option><option value="2">2회차 (5/31 14:00)</option>
+                <option value="3">3회차 (5/31 18:00)</option><option value="4">4회차 (6/06 19:00)</option>
+                <option value="5">5회차 (6/07 14:00)</option><option value="6">6회차 (6/07 18:00)</option>
+                <option value="7">7회차 (6/13 19:00)</option>
+            </select>
+        </div>
+        <div class="form-section" style="margin-bottom:0;">
+            <div class="form-row"><label>예약자명</label><input type="text" id="mob-resName" placeholder="예: 홍길동"></div>
+            <div class="form-row"><label>관람 매수</label><input type="number" id="mob-resCount" value="1" min="1" style="text-align:center;font-weight:bold;"></div>
+            <div class="form-row"><label>연락처</label><input type="text" id="mob-resPhone" value="010-" oninput="autoHyphenPhone(this)" maxlength="13"></div>
+            <div class="form-row"><label>예매 구분</label>
+                <select id="mob-resType">
+                    <option value="일반">일반</option><option value="후원/CMS">후원/CMS</option>
+                    <option value="VIP">VIP</option><option value="단원/STAFF">단원/STAFF</option>
+                </select>
+            </div>
+            <div class="form-row"><label>예매 방법</label>
+                <select id="mob-resMethod">
+                    <option value="전화">전화</option><option value="문자">문자</option>
+                    <option value="카톡">카톡</option><option value="플친">플친</option><option value="기타">기타</option>
+                </select>
+            </div>
+            <div class="form-row"><label>담당자</label>
+                <select id="mob-resManager">
+                    <option value="보라">보라</option><option value="보연">보연</option>
+                    <option value="민지">민지</option><option value="단장님">단장님</option>
+                </select>
+            </div>
+            <button class="btn-primary" onclick="mobAddReservation()" style="margin-top:10px;">예약 대기 목록에 추가하기</button>
+        </div>
+    </div>
+</div>
+
+<!-- 모바일 패널 2: 예매 리스트 -->
+<div class="mobile-panel" id="mob-panel-reslist">
+    <div style="padding:14px;">
+        <div style="font-size:15px;font-weight:700;color:var(--primary);margin-bottom:12px;">📋 해당 회차 예매 리스트</div>
+        <div class="res-list" id="mob-reservationList"></div>
+    </div>
+</div>
+
+<!-- 모바일 패널 3: 좌석 배치도 -->
+<div class="mobile-panel" id="mob-panel-seat">
+    <div style="padding:14px 14px 0;">
+        <div style="font-size:15px;font-weight:700;color:var(--primary);margin-bottom:10px;">🎫 좌석 배치도</div>
+        <div class="stats-row" id="mob-statsRow" style="margin-bottom:10px;"></div>
+        <div style="font-size:12px;color:var(--primary);font-weight:bold;margin-bottom:8px;">💡 빈 좌석을 클릭하면 배정 창이 열립니다. 좌우로 스크롤하세요.</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;font-size:11px;font-weight:bold;color:var(--text2);">
+            <span>⬜ 일반석</span><span style="color:#1976d2;">🔵 일반예약</span>
+            <span style="color:#388e3c;">🟢 후원/CMS</span><span style="color:#8e24aa;">🟣 VIP</span>
+            <span style="color:#f57c00;">🟠 단원</span><span style="color:#9e9e9e;">⬛ 불가석</span>
+        </div>
+    </div>
+    <div class="seat-map-wrapper" style="margin:0;border-radius:0;border-left:none;border-right:none;">
+        <div class="stage-label">STAGE</div>
+        <div class="seat-grid" id="mob-seatingChart"></div>
+        <div class="console-label">CONSOLE</div>
+    </div>
+</div>
+
+<!-- 모바일 패널 4: 전체 현황 (대시보드) -->
+<div class="mobile-panel" id="mob-panel-dash">
+    <div style="padding:12px;">
+        <div style="font-size:15px;font-weight:700;color:var(--primary);margin-bottom:12px;">📊 회차별 전체 예매 현황</div>
+        <div class="data-table-container">
+            <table class="data-table">
+                <thead><tr>
+                    <th>회차</th><th>일시</th><th>가용</th><th>예약</th>
+                    <th>잔여</th><th>예약률</th><th>입장</th><th>입장률</th>
+                </tr></thead>
+                <tbody id="mob-dashboardTbody"></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- 모바일 패널 5: 통합 예매 리스트 -->
+<div class="mobile-panel" id="mob-panel-list">
+    <div style="padding:12px;">
+        <div style="font-size:15px;font-weight:700;color:var(--primary);margin-bottom:12px;">🗂️ 통합 예매 리스트</div>
+        <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;">
+            <select id="mob-filterShowtime" onchange="renderTotalList()" style="flex:1;padding:8px;border:1px solid var(--border);border-radius:6px;font-size:13px;">
+                <option value="all">전체 회차</option>
+                <option value="1">1회차</option><option value="2">2회차</option><option value="3">3회차</option>
+                <option value="4">4회차</option><option value="5">5회차</option><option value="6">6회차</option><option value="7">7회차</option>
+            </select>
+            <input type="text" id="mob-filterKeyword" placeholder="이름/연락처 검색" onkeyup="renderTotalList()" style="flex:1;padding:8px;border:1px solid var(--border);border-radius:6px;font-size:13px;">
+        </div>
+        <div class="res-list" id="mob-totalList"></div>
     </div>
 </div>
 
@@ -1177,6 +1390,203 @@
         const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='2026_빛의여로_통합예매리스트.csv';
         document.body.appendChild(a); a.click(); document.body.removeChild(a);
     };
+
+    // ============================================================
+    // 📱 모바일 전용 함수들
+    // ============================================================
+    const isMobile = () => window.innerWidth <= 768;
+
+    window.syncShowtime = function(val) {
+        document.getElementById('viewShowtime').value = val;
+        renderAll();
+    };
+
+    window.switchMobileTab = function(tab) {
+        const tabs = ['form','reslist','seat','dash','list'];
+        tabs.forEach(t => {
+            const btn = document.getElementById('mob-btn-'+t);
+            const panel = document.getElementById('mob-panel-'+t);
+            if(btn) btn.classList.remove('active');
+            if(panel) panel.classList.remove('active');
+        });
+        const activeBtn = document.getElementById('mob-btn-'+tab);
+        const activePanel = document.getElementById('mob-panel-'+tab);
+        if(activeBtn) activeBtn.classList.add('active');
+        if(activePanel) activePanel.classList.add('active');
+
+        if(tab==='seat') renderMobileSeat();
+        if(tab==='dash') renderMobileDashboard();
+        if(tab==='list') renderMobileTotalList();
+        if(tab==='reslist') renderMobileResList();
+    };
+
+    window.mobAddReservation = function() {
+        const show = document.getElementById('mob-viewShowtime').value;
+        const name = document.getElementById('mob-resName').value.trim();
+        const phone = document.getElementById('mob-resPhone').value;
+        const type = document.getElementById('mob-resType').value;
+        const method = document.getElementById('mob-resMethod').value;
+        const manager = document.getElementById('mob-resManager').value;
+        const count = parseInt(document.getElementById('mob-resCount').value);
+        if(!name||phone==='010-'||phone.length<12){alert("이름과 정확한 연락처를 입력해주세요.");return;}
+
+        let assigned=0,pendingCount=0;
+        db.pending.forEach(p=>{if(parseInt(p.show)===parseInt(show))pendingCount++;});
+        Object.keys(db.seats).forEach(k=>{if(k.startsWith(show+'-'))assigned++;});
+        let totalReserved=assigned+pendingCount, remaining=getUsableSeats(show)-totalReserved;
+
+        if(count>remaining){
+            let msg=remaining>0?"잔여 좌석("+remaining+"석)보다 예약 매수("+count+"매)가 많습니다.\n초과 인원은 '대기 예매'로 접수됩니다.\n\n진행하시겠습니까?":"전석 매진 상태입니다.\n'대기 예매'로 접수하시겠습니까?";
+            if(!confirm(msg))return;
+        }
+        for(let i=0;i<count;i++){
+            db.pending.push({show,name,phone,type,method,manager,isOverflow:(totalReserved+i+1)>getUsableSeats(show)});
+        }
+        document.getElementById('mob-resName').value='';
+        document.getElementById('mob-resPhone').value='010-';
+        saveData();
+        alert(name+'님 '+count+'매가 접수되었습니다.');
+    };
+
+    function renderMobileSeat() {
+        const show = document.getElementById('mob-viewShowtime') ? document.getElementById('mob-viewShowtime').value : document.getElementById('viewShowtime').value;
+        document.getElementById('viewShowtime').value = show;
+
+        // 통계
+        let reserved=0,general=0,sponsor=0,vip=0,staff=0,pickedUp=0,pN=0,pO=0;
+        Object.keys(db.seats).forEach(id=>{
+            if(!id.startsWith(show+'-'))return; reserved++;
+            let t=db.seats[id].type;
+            if(t==='일반')general++;else if(t==='후원/CMS'||t==='후원')sponsor++;else if(t==='VIP')vip++;else if(t==='단원/STAFF')staff++;
+            if(db.seats[id].pickedUp)pickedUp++;
+        });
+        db.pending.forEach(p=>{if(parseInt(p.show)===parseInt(show)){p.isOverflow?pO++:pN++;}});
+        document.getElementById('mob-statsRow').innerHTML=`
+            <div class="stat-card"><div class="stat-label">총좌석</div><div class="stat-val">${getUsableSeats(show)}</div></div>
+            <div class="stat-card"><div class="stat-label">배정완료</div><div class="stat-val blue">${reserved}</div></div>
+            <div class="stat-card"><div class="stat-label">잔여좌석</div><div class="stat-val amber">${getUsableSeats(show)-reserved}</div></div>
+            <div class="stat-card"><div class="stat-label">미배정/대기</div><div class="stat-val" style="font-size:13px;color:#d35400;">${pN}/${pO}</div></div>`;
+
+        // 좌석 배치도
+        const chartDiv = document.getElementById('mob-seatingChart');
+        chartDiv.innerHTML='';
+        'ABCDEFGHIJKLM'.split('').forEach(row=>{
+            const rowDiv=document.createElement('div'); rowDiv.className='seat-row';
+            rowDiv.innerHTML='<div class="row-label">'+row+'</div>';
+            if(row==='M'){const d=document.createElement('div');d.className='entrance-door';d.innerHTML='🚪';d.title='주 출입구';rowDiv.appendChild(d);}
+            for(let i=1;i<=24;i++){
+                if((row==='L'||row==='M')&&i>=19)continue;
+                if(row==='M'&&i===17){const w=document.createElement('div');w.className='wheelchair-space';w.innerHTML='♿ 휠체어석';rowDiv.appendChild(w);continue;}
+                if(row==='M'&&i===18){const g=document.createElement('div');g.className='aisle';rowDiv.appendChild(g);const b=document.createElement('div');b.className='booth-bottom';rowDiv.appendChild(b);continue;}
+                rowDiv.appendChild(createSeat(show,row,i));
+                if(i===6||i===18){const g=document.createElement('div');g.className='aisle';rowDiv.appendChild(g);}
+                if(i===18&&row==='L'){const bt=document.createElement('div');bt.className='booth-top';bt.innerHTML='🎬 영상 시스템 부스';rowDiv.appendChild(bt);}
+            }
+            chartDiv.appendChild(rowDiv);
+        });
+    }
+
+    function renderMobileDashboard() {
+        const tbody=document.getElementById('mob-dashboardTbody'); tbody.innerHTML='';
+        let sT=0,sR=0,sC=0;
+        const info={1:"5/30 19:00",2:"5/31 14:00",3:"5/31 18:00",4:"6/06 19:00",5:"6/07 14:00",6:"6/07 18:00",7:"6/13 19:00"};
+        for(let show=1;show<=7;show++){
+            let a=0,p=0,c=0;
+            db.pending.forEach(x=>{if(parseInt(x.show)===show)p++;});
+            Object.keys(db.seats).forEach(k=>{if(k.startsWith(show+'-')){a++;if(db.seats[k].pickedUp)c++;}});
+            let total=a+p,u=getUsableSeats(show),rem=Math.max(0,u-total);
+            let rr=((total/u)*100).toFixed(1);
+            sT+=u;sR+=total;sC+=c;
+            let bc=rr>=90?'high':rr>=50?'medium':'';
+            const tr=document.createElement('tr');
+            tr.innerHTML=`<td><strong>${show}회</strong></td><td style="font-size:11px">${info[show]}</td><td>${u}</td><td style="color:var(--primary);font-weight:bold;">${total}</td><td style="color:var(--accent);font-weight:bold;">${rem}</td><td><div class="progress-bar-bg"><div class="progress-bar-fill ${bc}" style="width:${Math.min(rr,100)}%"></div></div><span style="font-weight:600;font-size:11px">${rr}%</span></td><td style="color:var(--success);font-weight:bold;">${c}</td><td style="font-size:11px">${total>0?((c/total)*100).toFixed(1):"0.0"}%</td>`;
+            tbody.appendChild(tr);
+        }
+        const tr=document.createElement('tr'); tr.style.borderTop='2px solid var(--primary-dark)';
+        tr.innerHTML=`<td colspan="2" style="font-weight:bold;color:var(--primary-dark)">합계</td><td style="font-weight:bold">${sT}</td><td style="font-weight:bold;color:var(--primary)">${sR}</td><td style="font-weight:bold;color:var(--accent)">${sT-sR}</td><td style="font-weight:bold">${((sR/sT)*100).toFixed(1)}%</td><td style="font-weight:bold;color:var(--success)">${sC}</td><td style="font-weight:bold">${sR>0?((sC/sR)*100).toFixed(1):"0.0"}%</td>`;
+        tbody.appendChild(tr);
+    }
+
+    function renderMobileResList() {
+        const show = document.getElementById('mob-viewShowtime') ? document.getElementById('mob-viewShowtime').value : document.getElementById('viewShowtime').value;
+        const listDiv = document.getElementById('mob-reservationList');
+        listDiv.innerHTML='';
+        const groups = buildGroups(show);
+        if(groups.size===0){listDiv.innerHTML='<div class="res-empty">해당 회차에 내역이 없습니다.</div>';return;}
+        groups.forEach(g=>{
+            const div=document.createElement('div');
+            div.className='res-item'+(g.type==='후원/CMS'||g.type==='후원'?' sponsor':g.type==='VIP'?' vip':g.type==='단원/STAFF'?' staff':'')+(g.pending===0?' checked-in':'');
+            let bc=g.type==='후원/CMS'||g.type==='후원'?'badge-sponsor':g.type==='VIP'?'badge-vip':g.type==='단원/STAFF'?'badge-staff':'badge-normal';
+            let seatsHtml=g.seats.length>0?'<div class="seat-badge-container">'+g.seats.map(s=>`<button class="seat-check-btn ${s.pickedUp?'is-checked':''}" onclick="toggleCheckInFromList('${s.id}')">${s.label}</button>`).join('')+'</div>':'<span style="color:var(--text3)">배정 없음</span>';
+            let sBadge=g.pending>0?`<span class="res-badge" style="background:#ffeaa7;color:#d35400;">미배정 ${g.pending}건</span>`:'<span class="res-badge badge-checked">배정완료</span>';
+            div.innerHTML=`
+                <div class="res-top"><span class="res-name">${g.name} <span class="res-badge ${bc}">${g.type}</span> ${sBadge}</span></div>
+                <div class="res-meta"><span style="width:100%">📞 ${g.phone} | 총 ${g.total}매</span><div style="margin-top:2px">${seatsHtml}</div></div>
+                <div class="res-actions">
+                    <button class="btn-sm btn-sm-amber" onclick="openEditInfoModal('${show}','${g.name}','${g.phone}','${g.type}','${g.method}','${g.manager}')">수정</button>
+                    <button class="btn-sm btn-sm-blue" onclick="changeTicketCount('${show}','${g.name}','${g.phone}','${g.type}','${g.method}','${g.manager}',${g.total},${g.pending})">매수변경</button>
+                    <button class="btn-sm btn-sm-red" onclick="cancelEntireReservation('${show}','${g.name}','${g.phone}')">전체취소</button>
+                </div>`;
+            listDiv.appendChild(div);
+        });
+    }
+
+    function renderMobileTotalList() {
+        const fs = document.getElementById('mob-filterShowtime').value;
+        const fk = document.getElementById('mob-filterKeyword').value.trim().toLowerCase();
+        const listDiv = document.getElementById('mob-totalList');
+        listDiv.innerHTML='';
+        let has=false;
+        for(let show=1;show<=7;show++){
+            if(fs!=='all'&&parseInt(fs)!==show)continue;
+            const groups=buildGroups(String(show));
+            groups.forEach(g=>{
+                if(fk&&!g.name.toLowerCase().includes(fk)&&!g.phone.includes(fk))return;
+                has=true;
+                const div=document.createElement('div');
+                div.className='res-item'+(g.type==='후원/CMS'||g.type==='후원'?' sponsor':g.type==='VIP'?' vip':g.type==='단원/STAFF'?' staff':'');
+                let bc=g.type==='후원/CMS'||g.type==='후원'?'badge-sponsor':g.type==='VIP'?'badge-vip':g.type==='단원/STAFF'?'badge-staff':'badge-normal';
+                let sh=g.seats.length>0?g.seats.map(s=>`<button class="seat-check-btn ${s.pickedUp?'is-checked':''}" onclick="toggleCheckInFromList('${s.id}')">${s.label2}</button>`).join(' '):'미배정';
+                let stHtml=g.assigned>0&&g.assigned===g.pickedUpCount?'<span class="status-complete">전원 입장완료</span>':g.assigned>0?(g.pickedUpCount>0?'<span style="color:var(--accent);font-weight:bold">일부 입장완료</span>':'<span class="status-pending">입장 전</span>'):`<span style="color:#d35400;font-weight:bold">대기중</span>`;
+                div.innerHTML=`
+                    <div class="res-top"><span class="res-name">${show}회차 | ${g.name} <span class="res-badge ${bc}">${g.type}</span></span></div>
+                    <div class="res-meta"><span>📞 ${g.phone} | 총 ${g.total}매 (배정 ${g.assigned}/대기 ${g.pending})</span></div>
+                    <div class="seat-badge-container" style="margin:4px 0">${sh}</div>
+                    <div style="font-size:12px;margin-top:4px">${stHtml}</div>`;
+                listDiv.appendChild(div);
+            });
+        }
+        if(!has) listDiv.innerHTML='<div class="res-empty">조건에 맞는 예매 내역이 없습니다.</div>';
+    }
+
+    // 모바일 renderAll 오버라이드
+    const _origRenderAll = window.renderAll;
+    window.renderAll = function() {
+        _origRenderAll();
+        if(isMobile()) {
+            // 현재 활성 모바일 탭 재렌더
+            const activePanel = document.querySelector('.mobile-panel.active');
+            if(activePanel) {
+                const id = activePanel.id.replace('mob-panel-','');
+                if(id==='seat') renderMobileSeat();
+                else if(id==='dash') renderMobileDashboard();
+                else if(id==='reslist') renderMobileResList();
+                else if(id==='list') renderMobileTotalList();
+            }
+            // 모바일 회차 셀렉트 동기화
+            const mobSel = document.getElementById('mob-viewShowtime');
+            if(mobSel) mobSel.value = document.getElementById('viewShowtime').value;
+        }
+    };
+
+    // mob-filterShowtime/keyword → renderTotalList 연동
+    const _origRenderTotalList = window.renderTotalList;
+    window.renderTotalList = function() {
+        _origRenderTotalList();
+        if(isMobile()) renderMobileTotalList();
+    };
+
+
 </script>
 </body>
 </html>
