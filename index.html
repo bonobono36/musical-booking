@@ -719,7 +719,7 @@
         <table class="data-table">
             <thead><tr>
                 <th>회차</th><th>예약자명</th><th>연락처</th><th>구분</th><th>총매수</th>
-                <th>배정/대기</th><th>배정된 좌석번호</th><th>예매방법</th><th>담당자</th><th>입장상태</th>
+                <th>배정/대기</th><th>배정된 좌석번호</th><th>예매방법</th><th>담당자</th><th>예매일시</th><th>입장상태</th>
             </tr></thead>
             <tbody id="totalListTbody"></tbody>
         </table>
@@ -1275,8 +1275,9 @@
                 : "전석 매진 상태입니다.\n'대기 예매'로 접수하시겠습니까?";
             if (!await _confirm(msg, '매진 안내')) return;
         }
+        const reservedAt = new Date().toLocaleString('ko-KR', {year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});
         for (let i=0; i<count; i++) {
-            db.pending.push({ show, name, phone, type, method, manager, isOverflow: (totalReserved+i+1) > getUsableSeats(show) });
+            db.pending.push({ show, name, phone, type, method, manager, isOverflow: (totalReserved+i+1) > getUsableSeats(show), reservedAt });
         }
         document.getElementById('resName').value = '';
         document.getElementById('resPhone').value = '010-';
@@ -1350,7 +1351,8 @@
             Object.keys(db.seats).forEach(k=>{if(k.startsWith(show+'-'))assigned++;});
             let total=assigned+pCount, rem=getUsableSeats(show)-total;
             if(add>rem&&!await _confirm(rem>0?"잔여 가용 좌석("+rem+"석)보다 추가 매수("+add+"매)가 많습니다.\n초과 인원은 대기 예매로 접수됩니다.\n진행하시겠습니까?":"전석 매진 상태입니다.\n추가 인원을 대기 예매로 접수하시겠습니까?", "매수 추가")) return;
-            for(let i=0;i<add;i++) db.pending.push({show,name,phone,type,method,manager,isOverflow:(total+i+1)>getUsableSeats(show)});
+            const changeReservedAt = new Date().toLocaleString('ko-KR', {year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});
+            for(let i=0;i<add;i++) db.pending.push({show,name,phone,type,method,manager,isOverflow:(total+i+1)>getUsableSeats(show),reservedAt:changeReservedAt});
             saveData(); await _alert(add+'매가 추가 접수되었습니다.', '추가 완료');
         } else {
             let reduce = currentTotal-newCount;
@@ -1366,14 +1368,17 @@
         db.pending.forEach(p => {
             if(p.show!==show) return;
             const k=p.name+'_'+p.phone;
-            if(!groups.has(k)) groups.set(k,{name:p.name,phone:p.phone,type:p.type,method:p.method,manager:p.manager,total:0,pending:0,assigned:0,seats:[],pickedUpCount:0,overflowCount:0});
+            if(!groups.has(k)) groups.set(k,{name:p.name,phone:p.phone,type:p.type,method:p.method,manager:p.manager,total:0,pending:0,assigned:0,seats:[],pickedUpCount:0,overflowCount:0,reservedAt:p.reservedAt||''});
             const g=groups.get(k); g.total++; g.pending++; if(p.isOverflow) g.overflowCount++;
+            // 가장 빠른 예매일시 저장
+            if(p.reservedAt && (!g.reservedAt || p.reservedAt < g.reservedAt)) g.reservedAt = p.reservedAt;
         });
         Object.keys(db.seats).forEach(id => {
             if(!id.startsWith(show+'-')) return;
             const s=db.seats[id], k=s.name+'_'+s.phone;
-            if(!groups.has(k)) groups.set(k,{name:s.name,phone:s.phone,type:s.type,method:s.method,manager:s.manager,total:0,pending:0,assigned:0,seats:[],pickedUpCount:0,overflowCount:0});
+            if(!groups.has(k)) groups.set(k,{name:s.name,phone:s.phone,type:s.type,method:s.method,manager:s.manager,total:0,pending:0,assigned:0,seats:[],pickedUpCount:0,overflowCount:0,reservedAt:s.reservedAt||''});
             const g=groups.get(k); g.total++; g.assigned++; if(s.pickedUp) g.pickedUpCount++;
+            if(s.reservedAt && (!g.reservedAt || s.reservedAt < g.reservedAt)) g.reservedAt = s.reservedAt;
             const pts=id.split('-'); g.seats.push({id,label:pts[1]+pts[2],label2:pts[1]+'-'+pts[2],pickedUp:s.pickedUp});
         });
         return groups;
@@ -1394,7 +1399,7 @@
             let sBadge=g.pending>0?`<span class="res-badge" style="background:#ffeaa7;color:#d35400;">미배정 ${g.pending}건${overText}</span>`:'<span class="res-badge badge-checked">배정완료</span>';
             div.innerHTML=`
                 <div class="res-top"><span class="res-name">${g.name} <span class="res-badge ${bc}">${g.type}</span> ${sBadge}</span></div>
-                <div class="res-meta"><span style="width:100%">📞 ${g.phone} | 🎟️ 총 ${g.total}매 (대기 ${g.pending})</span><div style="margin-top:2px">좌석: ${seatsHtml}</div></div>
+                <div class="res-meta"><span style="width:100%">📞 ${g.phone} | 🎟️ 총 ${g.total}매 (대기 ${g.pending})</span>${g.reservedAt ? `<span style="width:100%;color:var(--text3);font-size:10px;">🕐 예매일시: ${g.reservedAt}</span>` : ''}<div style="margin-top:2px">좌석: ${seatsHtml}</div></div>
                 <div class="res-actions">
                     <button class="btn-sm btn-sm-amber" onclick="openEditInfoModal('${show}','${g.name}','${g.phone}','${g.type}','${g.method}','${g.manager}')">수정</button>
                     <button class="btn-sm btn-sm-blue" onclick="changeTicketCount('${show}','${g.name}','${g.phone}','${g.type}','${g.method}','${g.manager}',${g.total},${g.pending})">매수변경</button>
@@ -1448,7 +1453,7 @@
                 btnCI.innerText=s.pickedUp?'입장 확인 취소':'입장(수령) 확인';
                 btnCI.className=s.pickedUp?'btn-primary':'btn-primary btn-sm-green';
                 btnCI.onclick=()=>{ db.seats[seatId].pickedUp=!db.seats[seatId].pickedUp; saveData(); closeModal('seatModal'); };
-                btnC.onclick=()=>{ db.pending.push({show,name:s.name,phone:s.phone,type:s.type,method:s.method,manager:s.manager,isOverflow:false}); delete db.seats[seatId]; saveData(); closeModal('seatModal'); };
+                btnC.onclick=()=>{ db.pending.push({show,name:s.name,phone:s.phone,type:s.type,method:s.method,manager:s.manager,isOverflow:false,reservedAt:s.reservedAt||''}); delete db.seats[seatId]; saveData(); closeModal('seatModal'); };
                 modal.classList.remove('hidden');
             };
         } else {
@@ -1516,7 +1521,7 @@
                     // 가장 앞 순번 1개 배정
                     const targetIdx = g.indices[0];
                     const res = db.pending[targetIdx];
-                    db.seats[seatId]={name:res.name,phone:res.phone,type:res.type,method:res.method,manager:res.manager,pickedUp:false};
+                    db.seats[seatId]={name:res.name,phone:res.phone,type:res.type,method:res.method,manager:res.manager,pickedUp:false,reservedAt:res.reservedAt||''};
                     db.pending.splice(targetIdx,1);
                     saveData();
                     closeModal('assignModal');
@@ -1571,7 +1576,7 @@
                 let st=g.overflowCount>0&&g.assigned===0?'대기예매(매진)':g.overflowCount>0&&g.assigned>0?'일부 대기예매':'대기중';
                 let stHtml=g.assigned>0&&g.assigned===g.pickedUpCount?'<span class="status-complete">전원 입장완료</span>':g.assigned>0?(g.pickedUpCount>0?'<span class="status-pending" style="color:var(--accent)">일부 입장완료</span>':'<span class="status-pending">입장 전</span>'):`<span style="color:#d35400;font-weight:bold">${st}</span>`;
                 let bc=g.type==='일반'?'background:#e3f2fd;color:#1976d2':g.type==='후원/CMS'||g.type==='후원'?'background:#e8f5e9;color:#388e3c':g.type==='VIP'?'background:#f3e5f5;color:#8e24aa':'background:#fff3e0;color:#f57c00';
-                tr.innerHTML=`<td><strong>${show}회차</strong></td><td style="font-weight:bold">${g.name}</td><td>${g.phone}</td><td><span class="badge" style="${bc}">${g.type}</span></td><td style="font-weight:bold">${g.total}매</td><td>${g.assigned} / ${g.pending}</td><td style="text-align:left">${sh}</td><td>${g.method}</td><td>${g.manager}</td><td>${stHtml}</td>`;
+                tr.innerHTML=`<td><strong>${show}회차</strong></td><td style="font-weight:bold">${g.name}</td><td>${g.phone}</td><td><span class="badge" style="${bc}">${g.type}</span></td><td style="font-weight:bold">${g.total}매</td><td>${g.assigned} / ${g.pending}</td><td style="text-align:left">${sh}</td><td>${g.method}</td><td>${g.manager}</td><td style="font-size:11px;color:var(--text3);white-space:nowrap;">${g.reservedAt||'-'}</td><td>${stHtml}</td>`;
                 tbody.appendChild(tr);
             });
         }
@@ -1662,8 +1667,9 @@
             let msg=remaining>0?"잔여 좌석("+remaining+"석)보다 예약 매수("+count+"매)가 많습니다.\n초과 인원은 '대기 예매'로 접수됩니다.\n\n진행하시겠습니까?":"전석 매진 상태입니다.\n'대기 예매'로 접수하시겠습니까?";
             if(!await _confirm(msg, '매진 안내'))return;
         }
+        const mobReservedAt = new Date().toLocaleString('ko-KR', {year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});
         for(let i=0;i<count;i++){
-            db.pending.push({show,name,phone,type,method,manager,isOverflow:(totalReserved+i+1)>getUsableSeats(show)});
+            db.pending.push({show,name,phone,type,method,manager,isOverflow:(totalReserved+i+1)>getUsableSeats(show),reservedAt:mobReservedAt});
         }
         document.getElementById('mob-resName').value='';
         document.getElementById('mob-resPhone').value='010-';
