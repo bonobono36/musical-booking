@@ -371,9 +371,9 @@
         /* ==========================================
            📱 모바일 전용 하단 탭바
         ========================================== */
-        .mobile-tab-bar {
-            display: none;
-        }
+        /* PC에서는 모바일 전용 요소 완전히 숨김 */
+        .mobile-tab-bar { display: none; }
+        .mobile-panel { display: none; }
 
         @media (max-width: 768px) {
             /* 기본 레이아웃 */
@@ -625,6 +625,9 @@
                         <option value="민지">민지</option><option value="단장님">단장님</option>
                     </select>
                 </div>
+                <div class="form-row"><label>메모 (요구사항)</label>
+                    <textarea id="resMemo" placeholder="예: 휠체어석 요청, 앞자리 선호 등" rows="2" style="width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;font-family:inherit;resize:vertical;outline:none;"></textarea>
+                </div>
                 <button class="btn-primary" onclick="addReservation()" style="margin-top:10px;">예약 대기 목록에 추가하기</button>
             </div>
         </div>
@@ -719,7 +722,7 @@
         <table class="data-table">
             <thead><tr>
                 <th>회차</th><th>예약자명</th><th>연락처</th><th>구분</th><th>총매수</th>
-                <th>배정/대기</th><th>배정된 좌석번호</th><th>예매방법</th><th>담당자</th><th>예매일시</th><th>입장상태</th>
+                <th>배정/대기</th><th>배정된 좌석번호</th><th>예매방법</th><th>담당자</th><th>예매일시</th><th>메모</th><th>입장상태</th>
             </tr></thead>
             <tbody id="totalListTbody"></tbody>
         </table>
@@ -806,6 +809,9 @@
                     <option value="보라">보라</option><option value="보연">보연</option>
                     <option value="민지">민지</option><option value="단장님">단장님</option>
                 </select>
+            </div>
+            <div class="form-row"><label>메모 (요구사항)</label>
+                <textarea id="mob-resMemo" placeholder="예: 휠체어석 요청, 앞자리 선호 등" rows="2" style="width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;font-family:inherit;resize:vertical;outline:none;"></textarea>
             </div>
             <button class="btn-primary" onclick="mobAddReservation()" style="margin-top:10px;">예약 대기 목록에 추가하기</button>
         </div>
@@ -936,8 +942,11 @@
                 <select id="editMethod"><option value="전화">전화</option><option value="문자">문자</option><option value="카톡">카톡</option><option value="플친">플친</option><option value="기타">기타</option></select>
             </div>
         </div>
-        <div class="form-row" style="margin-bottom:20px;"><label>담당자</label>
+        <div class="form-row"><label>담당자</label>
             <select id="editManager"><option value="보라">보라</option><option value="보연">보연</option><option value="민지">민지</option><option value="단장님">단장님</option></select>
+        </div>
+        <div class="form-row" style="margin-bottom:20px;"><label>메모 (요구사항)</label>
+            <textarea id="editMemo" rows="2" placeholder="요구사항을 입력하세요" style="width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;font-family:inherit;resize:vertical;outline:none;"></textarea>
         </div>
         <div class="modal-actions">
             <button class="btn-primary" onclick="saveEditedInfo()">저장</button>
@@ -1261,6 +1270,7 @@
         const type = document.getElementById('resType').value;
         const method = document.getElementById('resMethod').value;
         const manager = document.getElementById('resManager').value;
+        const memo = document.getElementById('resMemo').value.trim();
         const count = parseInt(document.getElementById('resCount').value);
         if (!name || phone === '010-' || phone.length < 12) { await _alert("이름과 정확한 연락처를 입력해주세요."); return; }
 
@@ -1277,10 +1287,11 @@
         }
         const reservedAt = new Date().toLocaleString('ko-KR', {year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});
         for (let i=0; i<count; i++) {
-            db.pending.push({ show, name, phone, type, method, manager, isOverflow: (totalReserved+i+1) > getUsableSeats(show), reservedAt });
+            db.pending.push({ show, name, phone, type, method, manager, memo, isOverflow: (totalReserved+i+1) > getUsableSeats(show), reservedAt });
         }
         document.getElementById('resName').value = '';
         document.getElementById('resPhone').value = '010-';
+        document.getElementById('resMemo').value = '';
         saveData();
         await _alert(name+'님 '+count+'매가 접수되었습니다.', '접수 완료');
     };
@@ -1310,13 +1321,14 @@
             <div class="stat-card"><div class="stat-label">총 예매 건수</div><div class="stat-val" style="font-size:15px;">${reserved+pN+pO}</div></div>`;
     }
 
-    window.openEditInfoModal = function(show, name, phone, type, method, manager) {
+    window.openEditInfoModal = function(show, name, phone, type, method, manager, memo='') {
         currentEditTarget = { show, name, phone };
         document.getElementById('editName').value = name;
         document.getElementById('editPhone').value = phone;
         document.getElementById('editType').value = type==='후원'?'후원/CMS':type;
         document.getElementById('editMethod').value = method;
         document.getElementById('editManager').value = manager;
+        document.getElementById('editMemo').value = memo;
         document.getElementById('editModal').classList.remove('hidden');
     };
 
@@ -1324,10 +1336,11 @@
         if (!currentEditTarget) return;
         const nName=document.getElementById('editName').value.trim(), nPhone=document.getElementById('editPhone').value.trim();
         const nType=document.getElementById('editType').value, nMethod=document.getElementById('editMethod').value, nManager=document.getElementById('editManager').value;
+        const nMemo=document.getElementById('editMemo').value.trim();
         if (!nName||!nPhone||nPhone.length<12) { await _alert("이름과 연락처를 모두 입력해주세요."); return; }
         const {show,name:oN,phone:oP} = currentEditTarget;
-        db.pending.forEach(p => { if(p.show===show&&p.name===oN&&p.phone===oP) Object.assign(p,{name:nName,phone:nPhone,type:nType,method:nMethod,manager:nManager}); });
-        Object.keys(db.seats).forEach(id => { if(id.startsWith(show+'-')) { let s=db.seats[id]; if(s.name===oN&&s.phone===oP) Object.assign(s,{name:nName,phone:nPhone,type:nType,method:nMethod,manager:nManager}); } });
+        db.pending.forEach(p => { if(p.show===show&&p.name===oN&&p.phone===oP) Object.assign(p,{name:nName,phone:nPhone,type:nType,method:nMethod,manager:nManager,memo:nMemo}); });
+        Object.keys(db.seats).forEach(id => { if(id.startsWith(show+'-')) { let s=db.seats[id]; if(s.name===oN&&s.phone===oP) Object.assign(s,{name:nName,phone:nPhone,type:nType,method:nMethod,manager:nManager,memo:nMemo}); } });
         saveData(); closeModal('editModal');
     };
 
@@ -1368,17 +1381,20 @@
         db.pending.forEach(p => {
             if(p.show!==show) return;
             const k=p.name+'_'+p.phone;
-            if(!groups.has(k)) groups.set(k,{name:p.name,phone:p.phone,type:p.type,method:p.method,manager:p.manager,total:0,pending:0,assigned:0,seats:[],pickedUpCount:0,overflowCount:0,reservedAt:p.reservedAt||''});
+            if(!groups.has(k)) groups.set(k,{name:p.name,phone:p.phone,type:p.type,method:p.method,manager:p.manager,total:0,pending:0,assigned:0,seats:[],pickedUpCount:0,overflowCount:0,reservedAt:p.reservedAt||'',memo:p.memo||''});
             const g=groups.get(k); g.total++; g.pending++; if(p.isOverflow) g.overflowCount++;
             // 가장 빠른 예매일시 저장
             if(p.reservedAt && (!g.reservedAt || p.reservedAt < g.reservedAt)) g.reservedAt = p.reservedAt;
+            // 메모가 있으면 수집
+            if(p.memo && !g.memo) g.memo = p.memo;
         });
         Object.keys(db.seats).forEach(id => {
             if(!id.startsWith(show+'-')) return;
             const s=db.seats[id], k=s.name+'_'+s.phone;
-            if(!groups.has(k)) groups.set(k,{name:s.name,phone:s.phone,type:s.type,method:s.method,manager:s.manager,total:0,pending:0,assigned:0,seats:[],pickedUpCount:0,overflowCount:0,reservedAt:s.reservedAt||''});
+            if(!groups.has(k)) groups.set(k,{name:s.name,phone:s.phone,type:s.type,method:s.method,manager:s.manager,total:0,pending:0,assigned:0,seats:[],pickedUpCount:0,overflowCount:0,reservedAt:s.reservedAt||'',memo:s.memo||''});
             const g=groups.get(k); g.total++; g.assigned++; if(s.pickedUp) g.pickedUpCount++;
             if(s.reservedAt && (!g.reservedAt || s.reservedAt < g.reservedAt)) g.reservedAt = s.reservedAt;
+            if(s.memo && !g.memo) g.memo = s.memo;
             const pts=id.split('-'); g.seats.push({id,label:pts[1]+pts[2],label2:pts[1]+'-'+pts[2],pickedUp:s.pickedUp});
         });
         return groups;
@@ -1399,9 +1415,9 @@
             let sBadge=g.pending>0?`<span class="res-badge" style="background:#ffeaa7;color:#d35400;">미배정 ${g.pending}건${overText}</span>`:'<span class="res-badge badge-checked">배정완료</span>';
             div.innerHTML=`
                 <div class="res-top"><span class="res-name">${g.name} <span class="res-badge ${bc}">${g.type}</span> ${sBadge}</span></div>
-                <div class="res-meta"><span style="width:100%">📞 ${g.phone} | 🎟️ 총 ${g.total}매 (대기 ${g.pending})</span>${g.reservedAt ? `<span style="width:100%;color:var(--text3);font-size:10px;">🕐 예매일시: ${g.reservedAt}</span>` : ''}<div style="margin-top:2px">좌석: ${seatsHtml}</div></div>
+                <div class="res-meta"><span style="width:100%">📞 ${g.phone} | 🎟️ 총 ${g.total}매 (대기 ${g.pending})</span>${g.reservedAt ? `<span style="width:100%;color:var(--text3);font-size:10px;">🕐 예매일시: ${g.reservedAt}</span>` : ''}${g.memo ? `<span style="width:100%;background:#fffde7;border:1px solid #f9a825;border-radius:4px;padding:3px 7px;font-size:11px;color:#7b5e00;margin-top:2px;display:block;">📌 ${g.memo}</span>` : ''}<div style="margin-top:2px">좌석: ${seatsHtml}</div></div>
                 <div class="res-actions">
-                    <button class="btn-sm btn-sm-amber" onclick="openEditInfoModal('${show}','${g.name}','${g.phone}','${g.type}','${g.method}','${g.manager}')">수정</button>
+                    <button class="btn-sm btn-sm-amber" onclick="openEditInfoModal('${show}','${g.name}','${g.phone}','${g.type}','${g.method}','${g.manager}','${(g.memo||'').replace(/'/g,\"\\'\")}')">수정</button>
                     <button class="btn-sm btn-sm-blue" onclick="changeTicketCount('${show}','${g.name}','${g.phone}','${g.type}','${g.method}','${g.manager}',${g.total},${g.pending})">매수변경</button>
                     <button class="btn-sm btn-sm-red" onclick="cancelEntireReservation('${show}','${g.name}','${g.phone}')">전체취소</button>
                 </div>`;
@@ -1453,7 +1469,7 @@
                 btnCI.innerText=s.pickedUp?'입장 확인 취소':'입장(수령) 확인';
                 btnCI.className=s.pickedUp?'btn-primary':'btn-primary btn-sm-green';
                 btnCI.onclick=()=>{ db.seats[seatId].pickedUp=!db.seats[seatId].pickedUp; saveData(); closeModal('seatModal'); };
-                btnC.onclick=()=>{ db.pending.push({show,name:s.name,phone:s.phone,type:s.type,method:s.method,manager:s.manager,isOverflow:false,reservedAt:s.reservedAt||''}); delete db.seats[seatId]; saveData(); closeModal('seatModal'); };
+                btnC.onclick=()=>{ db.pending.push({show,name:s.name,phone:s.phone,type:s.type,method:s.method,manager:s.manager,memo:s.memo||'',isOverflow:false,reservedAt:s.reservedAt||''}); delete db.seats[seatId]; saveData(); closeModal('seatModal'); };
                 modal.classList.remove('hidden');
             };
         } else {
@@ -1521,7 +1537,7 @@
                     // 가장 앞 순번 1개 배정
                     const targetIdx = g.indices[0];
                     const res = db.pending[targetIdx];
-                    db.seats[seatId]={name:res.name,phone:res.phone,type:res.type,method:res.method,manager:res.manager,pickedUp:false,reservedAt:res.reservedAt||''};
+                    db.seats[seatId]={name:res.name,phone:res.phone,type:res.type,method:res.method,manager:res.manager,memo:res.memo||'',pickedUp:false,reservedAt:res.reservedAt||''};
                     db.pending.splice(targetIdx,1);
                     saveData();
                     closeModal('assignModal');
@@ -1576,7 +1592,7 @@
                 let st=g.overflowCount>0&&g.assigned===0?'대기예매(매진)':g.overflowCount>0&&g.assigned>0?'일부 대기예매':'대기중';
                 let stHtml=g.assigned>0&&g.assigned===g.pickedUpCount?'<span class="status-complete">전원 입장완료</span>':g.assigned>0?(g.pickedUpCount>0?'<span class="status-pending" style="color:var(--accent)">일부 입장완료</span>':'<span class="status-pending">입장 전</span>'):`<span style="color:#d35400;font-weight:bold">${st}</span>`;
                 let bc=g.type==='일반'?'background:#e3f2fd;color:#1976d2':g.type==='후원/CMS'||g.type==='후원'?'background:#e8f5e9;color:#388e3c':g.type==='VIP'?'background:#f3e5f5;color:#8e24aa':'background:#fff3e0;color:#f57c00';
-                tr.innerHTML=`<td><strong>${show}회차</strong></td><td style="font-weight:bold">${g.name}</td><td>${g.phone}</td><td><span class="badge" style="${bc}">${g.type}</span></td><td style="font-weight:bold">${g.total}매</td><td>${g.assigned} / ${g.pending}</td><td style="text-align:left">${sh}</td><td>${g.method}</td><td>${g.manager}</td><td style="font-size:11px;color:var(--text3);white-space:nowrap;">${g.reservedAt||'-'}</td><td>${stHtml}</td>`;
+                tr.innerHTML=`<td><strong>${show}회차</strong></td><td style="font-weight:bold">${g.name}</td><td>${g.phone}</td><td><span class="badge" style="${bc}">${g.type}</span></td><td style="font-weight:bold">${g.total}매</td><td>${g.assigned} / ${g.pending}</td><td style="text-align:left">${sh}</td><td>${g.method}</td><td>${g.manager}</td><td style="font-size:11px;color:var(--text3);white-space:nowrap;">${g.reservedAt||'-'}</td><td style="font-size:12px;max-width:150px;">${g.memo ? `<span style="background:#fffde7;border:1px solid #f9a825;border-radius:4px;padding:2px 6px;color:#7b5e00;">📌 ${g.memo}</span>` : '-'}</td><td>${stHtml}</td>`;
                 tbody.appendChild(tr);
             });
         }
@@ -1655,6 +1671,7 @@
         const type = document.getElementById('mob-resType').value;
         const method = document.getElementById('mob-resMethod').value;
         const manager = document.getElementById('mob-resManager').value;
+        const memo = document.getElementById('mob-resMemo').value.trim();
         const count = parseInt(document.getElementById('mob-resCount').value);
         if(!name||phone==='010-'||phone.length<12){await _alert("이름과 정확한 연락처를 입력해주세요.");return;}
 
@@ -1669,10 +1686,11 @@
         }
         const mobReservedAt = new Date().toLocaleString('ko-KR', {year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});
         for(let i=0;i<count;i++){
-            db.pending.push({show,name,phone,type,method,manager,isOverflow:(totalReserved+i+1)>getUsableSeats(show),reservedAt:mobReservedAt});
+            db.pending.push({show,name,phone,type,method,manager,memo,isOverflow:(totalReserved+i+1)>getUsableSeats(show),reservedAt:mobReservedAt});
         }
         document.getElementById('mob-resName').value='';
         document.getElementById('mob-resPhone').value='010-';
+        document.getElementById('mob-resMemo').value='';
         saveData();
         await _alert(name+'님 '+count+'매가 접수되었습니다.', '접수 완료');
     };
@@ -1750,9 +1768,9 @@
             let sBadge=g.pending>0?`<span class="res-badge" style="background:#ffeaa7;color:#d35400;">미배정 ${g.pending}건</span>`:'<span class="res-badge badge-checked">배정완료</span>';
             div.innerHTML=`
                 <div class="res-top"><span class="res-name">${g.name} <span class="res-badge ${bc}">${g.type}</span> ${sBadge}</span></div>
-                <div class="res-meta"><span style="width:100%">📞 ${g.phone} | 총 ${g.total}매</span><div style="margin-top:2px">${seatsHtml}</div></div>
+                <div class="res-meta"><span style="width:100%">📞 ${g.phone} | 총 ${g.total}매</span>${g.memo?`<span style="width:100%;background:#fffde7;border:1px solid #f9a825;border-radius:4px;padding:3px 7px;font-size:11px;color:#7b5e00;margin-top:2px;display:block;">📌 ${g.memo}</span>`:''}<div style="margin-top:2px">${seatsHtml}</div></div>
                 <div class="res-actions">
-                    <button class="btn-sm btn-sm-amber" onclick="openEditInfoModal('${show}','${g.name}','${g.phone}','${g.type}','${g.method}','${g.manager}')">수정</button>
+                    <button class="btn-sm btn-sm-amber" onclick="openEditInfoModal('${show}','${g.name}','${g.phone}','${g.type}','${g.method}','${g.manager}','${(g.memo||'').replace(/'/g,\"\\'\")}')">수정</button>
                     <button class="btn-sm btn-sm-blue" onclick="changeTicketCount('${show}','${g.name}','${g.phone}','${g.type}','${g.method}','${g.manager}',${g.total},${g.pending})">매수변경</button>
                     <button class="btn-sm btn-sm-red" onclick="cancelEntireReservation('${show}','${g.name}','${g.phone}')">전체취소</button>
                 </div>`;
