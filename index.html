@@ -1321,6 +1321,18 @@
             <div class="stat-card"><div class="stat-label">총 예매 건수</div><div class="stat-val" style="font-size:15px;">${reserved+pN+pO}</div></div>`;
     }
 
+    // data-* 속성으로 수정 버튼 클릭 처리 (따옴표 이슈 방지)
+    window.openEditInfoModalFromBtn = function(btn) {
+        const show    = btn.dataset.show;
+        const name    = btn.dataset.name;
+        const phone   = btn.dataset.phone;
+        const type    = btn.dataset.type;
+        const method  = btn.dataset.method;
+        const manager = btn.dataset.manager;
+        const memo    = btn.dataset.memo.replace(/&quot;/g, '"');
+        openEditInfoModal(show, name, phone, type, method, manager, memo);
+    };
+
     window.openEditInfoModal = function(show, name, phone, type, method, manager, memo='') {
         currentEditTarget = { show, name, phone };
         document.getElementById('editName').value = name;
@@ -1417,7 +1429,7 @@
                 <div class="res-top"><span class="res-name">${g.name} <span class="res-badge ${bc}">${g.type}</span> ${sBadge}</span></div>
                 <div class="res-meta"><span style="width:100%">📞 ${g.phone} | 🎟️ 총 ${g.total}매 (대기 ${g.pending})</span>${g.reservedAt ? `<span style="width:100%;color:var(--text3);font-size:10px;">🕐 예매일시: ${g.reservedAt}</span>` : ''}${g.memo ? `<span style="width:100%;background:#fffde7;border:1px solid #f9a825;border-radius:4px;padding:3px 7px;font-size:11px;color:#7b5e00;margin-top:2px;display:block;">📌 ${g.memo}</span>` : ''}<div style="margin-top:2px">좌석: ${seatsHtml}</div></div>
                 <div class="res-actions">
-                    <button class="btn-sm btn-sm-amber" onclick="openEditInfoModal('${show}','${g.name}','${g.phone}','${g.type}','${g.method}','${g.manager}','${(g.memo||'').replace(/'/g,\"\\'\")}')">수정</button>
+                    <button class="btn-sm btn-sm-amber" data-show="${show}" data-name="${g.name}" data-phone="${g.phone}" data-type="${g.type}" data-method="${g.method}" data-manager="${g.manager}" data-memo="${(g.memo||'').replace(/"/g,'&quot;')}" onclick="openEditInfoModalFromBtn(this)">수정</button>
                     <button class="btn-sm btn-sm-blue" onclick="changeTicketCount('${show}','${g.name}','${g.phone}','${g.type}','${g.method}','${g.manager}',${g.total},${g.pending})">매수변경</button>
                     <button class="btn-sm btn-sm-red" onclick="cancelEntireReservation('${show}','${g.name}','${g.phone}')">전체취소</button>
                 </div>`;
@@ -1770,7 +1782,7 @@
                 <div class="res-top"><span class="res-name">${g.name} <span class="res-badge ${bc}">${g.type}</span> ${sBadge}</span></div>
                 <div class="res-meta"><span style="width:100%">📞 ${g.phone} | 총 ${g.total}매</span>${g.memo?`<span style="width:100%;background:#fffde7;border:1px solid #f9a825;border-radius:4px;padding:3px 7px;font-size:11px;color:#7b5e00;margin-top:2px;display:block;">📌 ${g.memo}</span>`:''}<div style="margin-top:2px">${seatsHtml}</div></div>
                 <div class="res-actions">
-                    <button class="btn-sm btn-sm-amber" onclick="openEditInfoModal('${show}','${g.name}','${g.phone}','${g.type}','${g.method}','${g.manager}','${(g.memo||'').replace(/'/g,\"\\'\")}')">수정</button>
+                    <button class="btn-sm btn-sm-amber" data-show="${show}" data-name="${g.name}" data-phone="${g.phone}" data-type="${g.type}" data-method="${g.method}" data-manager="${g.manager}" data-memo="${(g.memo||'').replace(/"/g,'&quot;')}" onclick="openEditInfoModalFromBtn(this)">수정</button>
                     <button class="btn-sm btn-sm-blue" onclick="changeTicketCount('${show}','${g.name}','${g.phone}','${g.type}','${g.method}','${g.manager}',${g.total},${g.pending})">매수변경</button>
                     <button class="btn-sm btn-sm-red" onclick="cancelEntireReservation('${show}','${g.name}','${g.phone}')">전체취소</button>
                 </div>`;
