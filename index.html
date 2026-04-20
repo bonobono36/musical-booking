@@ -970,6 +970,33 @@
 <!-- ==========================================
      🔥 Firebase SDK + 앱 로직
 ========================================== -->
+<!-- 모달: 회차 변경 -->
+<div id="changeShowtimeModal" class="modal-overlay hidden">
+    <div class="modal">
+        <h2>🔄 회차 변경</h2>
+        <div id="changeShowtimeInfo" class="modal-seat-info" style="margin-bottom:14px;"></div>
+        <div class="form-row">
+            <label>변경할 회차 선택</label>
+            <select id="newShowtime" style="width:100%;padding:10px;font-size:14px;border-radius:8px;border:1px solid var(--border);font-weight:bold;">
+                <option value="1">1회차 (5/30 19:00)</option>
+                <option value="2">2회차 (5/31 14:00)</option>
+                <option value="3">3회차 (5/31 18:00)</option>
+                <option value="4">4회차 (6/06 19:00)</option>
+                <option value="5">5회차 (6/07 14:00)</option>
+                <option value="6">6회차 (6/07 18:00)</option>
+                <option value="7">7회차 (6/13 19:00)</option>
+            </select>
+        </div>
+        <div id="changeShowtimeWarning" style="font-size:12px;color:var(--danger);margin-top:8px;font-weight:600;display:none;">
+            ⚠️ 배정된 좌석이 있습니다. 회차를 변경하면 배정된 좌석이 해제되고 대기 상태로 변경됩니다.
+        </div>
+        <div class="modal-actions" style="margin-top:16px;">
+            <button class="btn-primary" onclick="confirmChangeShowtime()">변경 확인</button>
+            <button class="btn-primary btn-danger" onclick="closeModal('changeShowtimeModal')">취소</button>
+        </div>
+    </div>
+</div>
+
 <script type="module">
     import { initializeApp }                              from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
     import { getDatabase, ref, set, onValue }             from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
@@ -1455,6 +1482,7 @@
                 <div class="res-actions">
                     <button class="btn-sm btn-sm-amber" data-show="${show}" data-name="${g.name}" data-phone="${g.phone}" data-type="${g.type}" data-method="${g.method}" data-manager="${g.manager}" data-memo="${(g.memo||'').replace(/"/g,'&quot;')}" onclick="openEditInfoModalFromBtn(this)">수정</button>
                     <button class="btn-sm btn-sm-blue" onclick="changeTicketCount('${show}','${g.name}','${g.phone}','${g.type}','${g.method}','${g.manager}',${g.total},${g.pending})">매수변경</button>
+                    <button class="btn-sm" style="background:#8e24aa;color:white;padding:5px 10px;font-size:11px;font-weight:700;border-radius:5px;border:none;cursor:pointer;" onclick="changeShowtime('${show}','${g.name}','${g.phone}')">회차변경</button>
                     <button class="btn-sm btn-sm-red" onclick="cancelEntireReservation('${show}','${g.name}','${g.phone}')">전체취소</button>
                 </div>`;
             listDiv.appendChild(div);
@@ -1673,6 +1701,90 @@
     };
 
     // ============================================================
+    // 🔄 회차 변경
+    // ============================================================
+    let _changeShowtimeTarget = null;
+
+    window.changeShowtime = function(show, name, phone) {
+        _changeShowtimeTarget = { show, name, phone };
+
+        // 배정된 좌석 있는지 확인
+        let assignedCount = 0;
+        Object.keys(db.seats).forEach(k => {
+            if(k.startsWith(show+'-')) {
+                let s = db.seats[k];
+                if(s.name===name && s.phone===phone) assignedCount++;
+            }
+        });
+
+        const showtimeNames = {
+            '1':'1회차 (5/30 19:00)','2':'2회차 (5/31 14:00)','3':'3회차 (5/31 18:00)',
+            '4':'4회차 (6/06 19:00)','5':'5회차 (6/07 14:00)','6':'6회차 (6/07 18:00)','7':'7회차 (6/13 19:00)'
+        };
+
+        document.getElementById('changeShowtimeInfo').innerHTML =
+            `<strong>예약자:</strong> ${name}<br><strong>연락처:</strong> ${phone}<br><strong>현재 회차:</strong> ${showtimeNames[show]}`;
+
+        // 현재 회차 선택 상태로 설정
+        document.getElementById('newShowtime').value = show;
+
+        // 배정 좌석 경고 표시
+        const warning = document.getElementById('changeShowtimeWarning');
+        warning.style.display = assignedCount > 0 ? 'block' : 'none';
+
+        document.getElementById('changeShowtimeModal').classList.remove('hidden');
+    };
+
+    window.confirmChangeShowtime = async function() {
+        if(!_changeShowtimeTarget) return;
+        const { show: oldShow, name, phone } = _changeShowtimeTarget;
+        const newShow = document.getElementById('newShowtime').value;
+
+        if(oldShow === newShow) {
+            await _alert('현재와 동일한 회차입니다.', '안내');
+            return;
+        }
+
+        const showtimeNames = {
+            '1':'1회차 (5/30 19:00)','2':'2회차 (5/31 14:00)','3':'3회차 (5/31 18:00)',
+            '4':'4회차 (6/06 19:00)','5':'5회차 (6/07 14:00)','6':'6회차 (6/07 18:00)','7':'7회차 (6/13 19:00)'
+        };
+
+        const ok = await _confirm(
+            `[${name}]님을 ${showtimeNames[oldShow]}에서
+${showtimeNames[newShow]}(으)로 변경하시겠습니까?`,
+            '회차 변경 확인'
+        );
+        if(!ok) return;
+
+        // pending 회차 변경
+        db.pending.forEach(p => {
+            if(p.show===oldShow && p.name===name && p.phone===phone) p.show = newShow;
+        });
+
+        // 배정된 좌석 → 해제 후 새 회차 대기로 이동
+        Object.keys(db.seats).forEach(k => {
+            if(k.startsWith(oldShow+'-')) {
+                let s = db.seats[k];
+                if(s.name===name && s.phone===phone) {
+                    db.pending.push({
+                        show: newShow, name: s.name, phone: s.phone,
+                        type: s.type, method: s.method, manager: s.manager,
+                        memo: s.memo||'', smsConfirmed: s.smsConfirmed||false,
+                        isOverflow: false, reservedAt: s.reservedAt||''
+                    });
+                    delete db.seats[k];
+                }
+            }
+        });
+
+        closeModal('changeShowtimeModal');
+        _changeShowtimeTarget = null;
+        saveData();
+        await _alert(`${name}님의 회차가 ${showtimeNames[newShow]}(으)로 변경되었습니다.`, '변경 완료');
+    };
+
+    // ============================================================
     // 📱 문자발송 여부 토글
     // ============================================================
     window.toggleSms = function(show, name, phone) {
@@ -1841,6 +1953,7 @@
                 <div class="res-actions">
                     <button class="btn-sm btn-sm-amber" data-show="${show}" data-name="${g.name}" data-phone="${g.phone}" data-type="${g.type}" data-method="${g.method}" data-manager="${g.manager}" data-memo="${(g.memo||'').replace(/"/g,'&quot;')}" onclick="openEditInfoModalFromBtn(this)">수정</button>
                     <button class="btn-sm btn-sm-blue" onclick="changeTicketCount('${show}','${g.name}','${g.phone}','${g.type}','${g.method}','${g.manager}',${g.total},${g.pending})">매수변경</button>
+                    <button class="btn-sm" style="background:#8e24aa;color:white;padding:5px 10px;font-size:11px;font-weight:700;border-radius:5px;border:none;cursor:pointer;" onclick="changeShowtime('${show}','${g.name}','${g.phone}')">회차변경</button>
                     <button class="btn-sm btn-sm-red" onclick="cancelEntireReservation('${show}','${g.name}','${g.phone}')">전체취소</button>
                 </div>`;
             listDiv.appendChild(div);
