@@ -586,6 +586,7 @@
     <button class="top-tab" id="nav-dash" onclick="switchTopTab('dash')">📊 회차별 전체 현황</button>
     <button class="top-tab" id="nav-list" onclick="switchTopTab('list')">📋 통합 예매 리스트</button>
     <button class="top-tab" id="nav-wait" onclick="switchTopTab('wait')">⏳ 대기자 명단</button>
+    <button class="top-tab" id="nav-trash" onclick="switchTopTab('trash')">🗑️ 휴지통 <span id="trashCountBadge" style="background:var(--danger);color:white;border-radius:10px;padding:1px 7px;font-size:11px;margin-left:4px;display:none;">0</span></button>
 </div>
 
 <!-- PAGE 1 -->
@@ -779,6 +780,9 @@
     <button class="mobile-tab-btn" id="mob-btn-wait" onclick="switchMobileTab('wait')">
         <span class="tab-icon">⏳</span>대기자
     </button>
+    <button class="mobile-tab-btn" id="mob-btn-trash" onclick="switchMobileTab('trash')">
+        <span class="tab-icon">🗑️</span>휴지통
+    </button>
 </div>
 
 <!-- 모바일 패널 1: 신규 예약 입력 -->
@@ -913,7 +917,32 @@
     </div>
 </div>
 
+<!-- PAGE: 🗑️ 휴지통 -->
+<div id="page-trash" class="page">
+    <div style="flex-direction:column;padding:24px;overflow-y:auto;background:var(--surface2);width:100%;display:flex;">
+        <div class="main-header">
+            <div class="main-title">🗑️ 휴지통</div>
+            <button class="btn-sm btn-sm-red" onclick="emptyTrash()" style="padding:8px 16px;font-size:13px;">🗑️ 휴지통 전체 비우기</button>
+        </div>
+        <div style="font-size:13px;color:var(--text3);margin-bottom:16px;background:var(--surface);padding:12px 16px;border-radius:8px;border:1px solid var(--border);">
+            💡 삭제된 예매 내역이 여기에 보관됩니다. <strong>복구</strong> 버튼을 누르면 원래 상태로 되돌아가요.
+        </div>
+        <div id="trashList" class="res-list"></div>
+    </div>
+</div>
+
 <!-- 모달: 배정 -->
+<div class="mobile-panel" id="mob-panel-trash">
+    <div style="padding:12px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+            <div style="font-size:15px;font-weight:700;color:var(--primary);">🗑️ 휴지통</div>
+            <button class="btn-sm btn-sm-red" onclick="emptyTrash()" style="font-size:11px;">전체 비우기</button>
+        </div>
+        <div style="font-size:12px;color:var(--text3);margin-bottom:10px;">복구 버튼을 누르면 원래 상태로 되돌아가요.</div>
+        <div id="mob-trashList" class="res-list"></div>
+    </div>
+</div>
+
 <div id="assignModal" class="modal-overlay hidden">
     <div class="modal" style="max-width:400px;">
         <h2 id="assignModalTitle">🎫 좌석 배정</h2>
@@ -1091,7 +1120,7 @@
     let currentEditTarget = null;
     let isSaving = false;
 
-    let db = { pending: [], seats: {}, title: '2026 빛의 여로' };
+    let db = { pending: [], seats: {}, title: '2026 빛의 여로', trash: [] };
     let BLOCKED_SEATS_MAP = {};
     for (let i = 1; i <= 7; i++) BLOCKED_SEATS_MAP[i] = ['A1','A2','A23','A24','B24','D24','E24','H24'];
 
@@ -1159,6 +1188,7 @@
                 db.pending  = data.pending  || [];
                 db.seats    = data.seats    || {};
                 db.title    = data.title    || '2026 빛의 여로';
+                db.trash    = data.trash    || [];
                 if (data.blockedMap) BLOCKED_SEATS_MAP = data.blockedMap;
             }
             document.getElementById('editableTitle').innerText = db.title;
@@ -1182,6 +1212,7 @@
                 pending: db.pending,
                 seats: db.seats,
                 title: db.title,
+                trash: db.trash || [],
                 blockedMap: BLOCKED_SEATS_MAP
             });
             setSyncStatus('connected', '🟢 Firebase 실시간 연동 중 — 모든 변경사항이 자동으로 공유됩니다');
@@ -1242,7 +1273,7 @@
     };
 
     window.switchTopTab = function(tab) {
-        ['main','dash','list','wait'].forEach(t => {
+        ['main','dash','list','wait','trash'].forEach(t => {
             document.getElementById('nav-'+t).classList.remove('active');
             document.getElementById('page-'+t).classList.remove('active');
         });
@@ -1251,6 +1282,7 @@
         if(tab==='dash') renderDashboard();
         if(tab==='list') renderTotalList();
         if(tab==='wait') renderWaitlist();
+        if(tab==='trash') renderTrash();
     };
 
     window.switchSidebarTab = function(tab) {
@@ -1297,6 +1329,7 @@
         updateDashboard();
         renderSidebarReservationList();
         renderSeatingChart();
+        updateTrashBadge();
         if(document.getElementById('page-dash').classList.contains('active')) renderDashboard();
         if(document.getElementById('page-list').classList.contains('active')) renderTotalList();
         if(document.getElementById('page-wait').classList.contains('active')) renderWaitlist();
@@ -1398,10 +1431,35 @@
     };
 
     window.cancelEntireReservation = async function(show, name, phone) {
-        if(!await _confirm('['+name+']님의 해당 회차 예매를 완전히 취소하시겠습니까?\n(배정된 좌석과 대기열 기록이 모두 삭제됩니다)', '전체 취소')) return;
-        db.pending = db.pending.filter(p => !(p.show===show&&p.name===name&&p.phone===phone));
-        Object.keys(db.seats).forEach(k => { if(k.startsWith(show+'-')) { let s=db.seats[k]; if(s.name===name&&s.phone===phone) delete db.seats[k]; } });
-        saveData(); await _alert("예매가 전체 취소되었습니다.", "취소 완료");
+        if(!await _confirm('['+name+']님의 해당 회차 예매를 취소하시겠습니까?\n(취소된 내역은 휴지통에서 복구 가능합니다)', '예매 취소')) return;
+
+        const showtimeNames = {
+            '1':'1회차 (5/30 19:00)','2':'2회차 (5/31 14:00)','3':'3회차 (5/31 18:00)',
+            '4':'4회차 (6/06 19:00)','5':'5회차 (6/07 14:00)','6':'6회차 (6/07 18:00)','7':'7회차 (6/13 19:00)'
+        };
+        const deletedAt = new Date().toLocaleString('ko-KR', {year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});
+        const trashItem = { id: Date.now()+'_'+Math.random().toString(36).substr(2,6), deletedAt, show, name, phone, showtimeName: showtimeNames[show]||(show+'회차'), pending: [], seats: {} };
+
+        const remainPending = [];
+        db.pending.forEach(p => {
+            if(p.show===show && p.name===name && p.phone===phone) trashItem.pending.push({...p});
+            else remainPending.push(p);
+        });
+        db.pending = remainPending;
+
+        Object.keys(db.seats).forEach(k => {
+            if(k.startsWith(show+'-')) {
+                let s = db.seats[k];
+                if(s.name===name && s.phone===phone) { trashItem.seats[k] = {...s}; delete db.seats[k]; }
+            }
+        });
+
+        if(!db.trash) db.trash = [];
+        db.trash.unshift(trashItem);
+        if(db.trash.length > 100) db.trash = db.trash.slice(0, 100);
+
+        saveData();
+        await _alert(name+'님의 예매가 취소되었습니다.\n휴지통에서 복구할 수 있어요.', '취소 완료');
     };
 
     window.changeTicketCount = async function(show, name, phone, type, method, manager, currentTotal, currentPending) {
@@ -1701,6 +1759,112 @@
     };
 
     // ============================================================
+    // 🗑️ 휴지통 기능
+    // ============================================================
+
+    function updateTrashBadge() {
+        const badge = document.getElementById('trashCountBadge');
+        if(!badge) return;
+        const count = (db.trash || []).length;
+        badge.textContent = count;
+        badge.style.display = count > 0 ? 'inline' : 'none';
+    }
+
+    function renderTrash() {
+        updateTrashBadge();
+        const listDiv = document.getElementById('trashList');
+        if(!listDiv) return;
+        listDiv.innerHTML = '';
+
+        if(!db.trash || db.trash.length === 0) {
+            listDiv.innerHTML = '<div class="res-empty" style="padding:40px;text-align:center;"><div style="font-size:48px;margin-bottom:12px;">🗑️</div><div style="font-size:15px;color:var(--text3);">휴지통이 비어있습니다.</div></div>';
+            return;
+        }
+
+        db.trash.forEach((item, idx) => {
+            const totalTickets = item.pending.length + Object.keys(item.seats).length;
+            const assignedSeats = Object.keys(item.seats).map(k => {
+                const parts = k.split('-');
+                return parts[1] + parts[2];
+            }).join(', ');
+
+            const type = item.pending.length > 0 ? item.pending[0].type :
+                         Object.values(item.seats).length > 0 ? Object.values(item.seats)[0].type : '일반';
+            const method = item.pending.length > 0 ? item.pending[0].method :
+                           Object.values(item.seats).length > 0 ? Object.values(item.seats)[0].method : '-';
+            const reservedAt = item.pending.length > 0 ? item.pending[0].reservedAt :
+                               Object.values(item.seats).length > 0 ? Object.values(item.seats)[0].reservedAt : '-';
+            const memo = item.pending.length > 0 ? item.pending[0].memo :
+                         Object.values(item.seats).length > 0 ? Object.values(item.seats)[0].memo : '';
+
+            let bc = type==='후원/CMS'||type==='후원' ? 'badge-sponsor' : type==='VIP' ? 'badge-vip' : type==='단원/STAFF' ? 'badge-staff' : 'badge-normal';
+            let borderColor = type==='후원/CMS'||type==='후원' ? 'var(--success)' : type==='VIP' ? 'var(--vip)' : type==='단원/STAFF' ? 'var(--staff)' : 'var(--danger)';
+
+            const div = document.createElement('div');
+            div.className = 'res-item';
+            div.style.borderLeftColor = borderColor;
+            div.style.opacity = '0.85';
+            div.innerHTML = `
+                <div class="res-top">
+                    <span class="res-name">${item.name} <span class="res-badge ${bc}">${type}</span></span>
+                    <span style="font-size:11px;color:var(--text3);">🗑️ 삭제: ${item.deletedAt}</span>
+                </div>
+                <div class="res-meta">
+                    <span style="width:100%">📞 ${item.phone} | 📅 ${item.showtimeName} | 🎟️ 총 ${totalTickets}매</span>
+                    <span style="width:100%;font-size:11px;color:var(--text2);">📬 ${method}${reservedAt ? ' | 🕐 예매일시: '+reservedAt : ''}</span>
+                    ${assignedSeats ? `<span style="width:100%;font-size:11px;">좌석: ${assignedSeats}</span>` : ''}
+                    ${memo ? `<span style="width:100%;background:#fffde7;border:1px solid #f9a825;border-radius:4px;padding:3px 7px;font-size:11px;color:#7b5e00;margin-top:2px;display:block;">📌 ${memo}</span>` : ''}
+                </div>
+                <div class="res-actions" style="margin-top:8px;">
+                    <button class="btn-sm btn-sm-green" onclick="restoreFromTrash(${idx})">♻️ 복구</button>
+                    <button class="btn-sm btn-sm-red" onclick="deleteFromTrash(${idx})">완전 삭제</button>
+                </div>
+            `;
+            listDiv.appendChild(div);
+        });
+    }
+
+    window.restoreFromTrash = async function(idx) {
+        if(!db.trash || !db.trash[idx]) return;
+        const item = db.trash[idx];
+        if(!await _confirm(`[${item.name}]님의 ${item.showtimeName} 예매를 복구하시겠습니까?`, '복구 확인')) return;
+
+        // pending 복구
+        item.pending.forEach(p => db.pending.push({...p}));
+
+        // 배정된 좌석 복구
+        Object.keys(item.seats).forEach(k => {
+            db.seats[k] = {...item.seats[k]};
+        });
+
+        // 휴지통에서 제거
+        db.trash.splice(idx, 1);
+        saveData();
+        await _alert(`${item.name}님의 예매가 복구되었습니다!`, '복구 완료');
+        renderTrash();
+    };
+
+    window.deleteFromTrash = async function(idx) {
+        if(!db.trash || !db.trash[idx]) return;
+        const item = db.trash[idx];
+        if(!await _confirm(`[${item.name}]님의 예매 내역을 완전히 삭제하시겠습니까?
+이 작업은 되돌릴 수 없습니다.`, '완전 삭제')) return;
+        db.trash.splice(idx, 1);
+        saveData();
+        renderTrash();
+    };
+
+    window.emptyTrash = async function() {
+        if(!db.trash || db.trash.length === 0) { await _alert('휴지통이 이미 비어있습니다.', '안내'); return; }
+        if(!await _confirm(`휴지통의 ${db.trash.length}개 항목을 모두 완전 삭제하시겠습니까?
+이 작업은 되돌릴 수 없습니다.`, '휴지통 비우기')) return;
+        db.trash = [];
+        saveData();
+        renderTrash();
+        await _alert('휴지통을 비웠습니다.', '완료');
+    };
+
+    // ============================================================
     // 🔄 회차 변경
     // ============================================================
     let _changeShowtimeTarget = null;
@@ -1823,7 +1987,7 @@ ${showtimeNames[newShow]}(으)로 변경하시겠습니까?`,
     };
 
     window.switchMobileTab = function(tab) {
-        const tabs = ['form','reslist','seat','dash','list','wait'];
+        const tabs = ['form','reslist','seat','dash','list','wait','trash'];
         tabs.forEach(t => {
             const btn = document.getElementById('mob-btn-'+t);
             const panel = document.getElementById('mob-panel-'+t);
@@ -1840,6 +2004,7 @@ ${showtimeNames[newShow]}(으)로 변경하시겠습니까?`,
         if(tab==='list') renderMobileTotalList();
         if(tab==='reslist') renderMobileResList();
         if(tab==='wait') renderMobileWaitlist();
+        if(tab==='trash') renderTrash();
     };
 
     window.mobAddReservation = async function() {
