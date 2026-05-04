@@ -648,10 +648,10 @@
             <div class="main-title">
                 조회 회차:
                 <select id="viewShowtime" onchange="renderAll()" style="padding:6px 10px;font-size:16px;border-radius:6px;border:1px solid var(--border);font-weight:bold;">
-                    <option value="1">1회차 (5/30 19:00)</option><option value="2">2회차 (5/31 14:00)</option>
-                    <option value="3">3회차 (5/31 18:00)</option><option value="4">4회차 (6/06 19:00)</option>
-                    <option value="5">5회차 (6/07 14:00)</option><option value="6">6회차 (6/07 18:00)</option>
-                    <option value="7">7회차 (6/13 19:00)</option>
+                    <option value="1">1회차 (5/30 토 19:00)</option><option value="2">2회차 (5/31 일 14:00)</option>
+                    <option value="3">3회차 (5/31 일 18:00)</option><option value="4">4회차 (6/06 토 19:00)</option>
+                    <option value="5">5회차 (6/07 일 14:00)</option><option value="6">6회차 (6/07 일 18:00)</option>
+                    <option value="7">7회차 (6/13 토 19:00)</option>
                 </select>
                 <button id="toggleEditModeBtn" class="btn-sm btn-sm-red" onclick="toggleEditMode()" style="padding:6px 12px;font-size:13px;margin-left:10px;">🛠 불가석 지정 모드: 켜기</button>
             </div>
@@ -792,10 +792,10 @@
         <div style="margin-bottom:10px;">
             <label style="font-size:12px;font-weight:700;color:var(--text2);display:block;margin-bottom:4px;">조회 회차</label>
             <select id="mob-viewShowtime" onchange="syncShowtime(this.value)" style="width:100%;padding:10px;font-size:14px;border-radius:8px;border:1px solid var(--border);font-weight:bold;">
-                <option value="1">1회차 (5/30 19:00)</option><option value="2">2회차 (5/31 14:00)</option>
-                <option value="3">3회차 (5/31 18:00)</option><option value="4">4회차 (6/06 19:00)</option>
-                <option value="5">5회차 (6/07 14:00)</option><option value="6">6회차 (6/07 18:00)</option>
-                <option value="7">7회차 (6/13 19:00)</option>
+                <option value="1">1회차 (5/30 토 19:00)</option><option value="2">2회차 (5/31 일 14:00)</option>
+                <option value="3">3회차 (5/31 일 18:00)</option><option value="4">4회차 (6/06 토 19:00)</option>
+                <option value="5">5회차 (6/07 일 14:00)</option><option value="6">6회차 (6/07 일 18:00)</option>
+                <option value="7">7회차 (6/13 토 19:00)</option>
             </select>
         </div>
         <div class="form-section" style="margin-bottom:0;">
@@ -907,10 +907,10 @@
         <div style="font-size:15px;font-weight:700;color:var(--primary);margin-bottom:12px;">⏳ 대기자 명단</div>
         <div style="margin-bottom:10px;">
             <select id="mob-waitShowtime" onchange="renderMobileWaitlist()" style="width:100%;padding:10px;font-size:14px;border-radius:8px;border:1px solid var(--border);font-weight:bold;">
-                <option value="1">1회차 (5/30 19:00)</option><option value="2">2회차 (5/31 14:00)</option>
-                <option value="3">3회차 (5/31 18:00)</option><option value="4">4회차 (6/06 19:00)</option>
-                <option value="5">5회차 (6/07 14:00)</option><option value="6">6회차 (6/07 18:00)</option>
-                <option value="7">7회차 (6/13 19:00)</option>
+                <option value="1">1회차 (5/30 토 19:00)</option><option value="2">2회차 (5/31 일 14:00)</option>
+                <option value="3">3회차 (5/31 일 18:00)</option><option value="4">4회차 (6/06 토 19:00)</option>
+                <option value="5">5회차 (6/07 일 14:00)</option><option value="6">6회차 (6/07 일 18:00)</option>
+                <option value="7">7회차 (6/13 토 19:00)</option>
             </select>
         </div>
         <div id="mob-waitList"></div>
@@ -1007,13 +1007,13 @@
         <div class="form-row">
             <label>변경할 회차 선택</label>
             <select id="newShowtime" style="width:100%;padding:10px;font-size:14px;border-radius:8px;border:1px solid var(--border);font-weight:bold;">
-                <option value="1">1회차 (5/30 19:00)</option>
-                <option value="2">2회차 (5/31 14:00)</option>
-                <option value="3">3회차 (5/31 18:00)</option>
-                <option value="4">4회차 (6/06 19:00)</option>
-                <option value="5">5회차 (6/07 14:00)</option>
-                <option value="6">6회차 (6/07 18:00)</option>
-                <option value="7">7회차 (6/13 19:00)</option>
+                <option value="1">1회차 (5/30 토 19:00)</option>
+                <option value="2">2회차 (5/31 일 14:00)</option>
+                <option value="3">3회차 (5/31 일 18:00)</option>
+                <option value="4">4회차 (6/06 토 19:00)</option>
+                <option value="5">5회차 (6/07 일 14:00)</option>
+                <option value="6">6회차 (6/07 일 18:00)</option>
+                <option value="7">7회차 (6/13 토 19:00)</option>
             </select>
         </div>
         <div id="changeShowtimeWarning" style="font-size:12px;color:var(--danger);margin-top:8px;font-weight:600;display:none;">
@@ -1434,8 +1434,8 @@
         if(!await _confirm('['+name+']님의 해당 회차 예매를 취소하시겠습니까?\n(취소된 내역은 휴지통에서 복구 가능합니다)', '예매 취소')) return;
 
         const showtimeNames = {
-            '1':'1회차 (5/30 19:00)','2':'2회차 (5/31 14:00)','3':'3회차 (5/31 18:00)',
-            '4':'4회차 (6/06 19:00)','5':'5회차 (6/07 14:00)','6':'6회차 (6/07 18:00)','7':'7회차 (6/13 19:00)'
+            '1':'1회차 (5/30 토 19:00)','2':'2회차 (5/31 일 14:00)','3':'3회차 (5/31 일 18:00)',
+            '4':'4회차 (6/06 토 19:00)','5':'5회차 (6/07 일 14:00)','6':'6회차 (6/07 일 18:00)','7':'7회차 (6/13 토 19:00)'
         };
         const deletedAt = new Date().toLocaleString('ko-KR', {year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});
         const trashItem = { id: Date.now()+'_'+Math.random().toString(36).substr(2,6), deletedAt, show, name, phone, showtimeName: showtimeNames[show]||(show+'회차'), pending: [], seats: {} };
@@ -1675,7 +1675,7 @@
     function renderDashboard() {
         const tbody=document.getElementById('dashboardTbody'); tbody.innerHTML='';
         let sT=0,sR=0,sC=0;
-        const info={1:"5/30 (목) 19:00",2:"5/31 (금) 14:00",3:"5/31 (금) 18:00",4:"6/06 (목) 19:00",5:"6/07 (금) 14:00",6:"6/07 (금) 18:00",7:"6/13 (목) 19:00"};
+        const info={1:"5/30 (토) 19:00",2:"5/31 (일) 14:00",3:"5/31 (일) 18:00",4:"6/06 (토) 19:00",5:"6/07 (일) 14:00",6:"6/07 (일) 18:00",7:"6/13 (토) 19:00"};
         for(let show=1;show<=7;show++){
             let a=0,p=0,c=0;
             db.pending.forEach(x=>{if(parseInt(x.show)===show)p++;});
@@ -1882,8 +1882,8 @@
         });
 
         const showtimeNames = {
-            '1':'1회차 (5/30 19:00)','2':'2회차 (5/31 14:00)','3':'3회차 (5/31 18:00)',
-            '4':'4회차 (6/06 19:00)','5':'5회차 (6/07 14:00)','6':'6회차 (6/07 18:00)','7':'7회차 (6/13 19:00)'
+            '1':'1회차 (5/30 토 19:00)','2':'2회차 (5/31 일 14:00)','3':'3회차 (5/31 일 18:00)',
+            '4':'4회차 (6/06 토 19:00)','5':'5회차 (6/07 일 14:00)','6':'6회차 (6/07 일 18:00)','7':'7회차 (6/13 토 19:00)'
         };
 
         document.getElementById('changeShowtimeInfo').innerHTML =
@@ -1910,8 +1910,8 @@
         }
 
         const showtimeNames = {
-            '1':'1회차 (5/30 19:00)','2':'2회차 (5/31 14:00)','3':'3회차 (5/31 18:00)',
-            '4':'4회차 (6/06 19:00)','5':'5회차 (6/07 14:00)','6':'6회차 (6/07 18:00)','7':'7회차 (6/13 19:00)'
+            '1':'1회차 (5/30 토 19:00)','2':'2회차 (5/31 일 14:00)','3':'3회차 (5/31 일 18:00)',
+            '4':'4회차 (6/06 토 19:00)','5':'5회차 (6/07 일 14:00)','6':'6회차 (6/07 일 18:00)','7':'7회차 (6/13 토 19:00)'
         };
 
         const ok = await _confirm(
