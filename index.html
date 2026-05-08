@@ -1764,7 +1764,8 @@
     function updateTrashBadge() {
         const badge = document.getElementById('trashCountBadge');
         if(!badge) return;
-        const count = (db.trash || []).length;
+        const trashArr = Array.isArray(db.trash) ? db.trash : [];
+        const count = trashArr.filter(Boolean).length;
         badge.textContent = count;
         badge.style.display = count > 0 ? 'inline' : 'none';
     }
@@ -1775,26 +1776,32 @@
         if(!listDiv) return;
         listDiv.innerHTML = '';
 
-        if(!db.trash || db.trash.length === 0) {
+        const trashArr = Array.isArray(db.trash) ? db.trash.filter(Boolean) : [];
+        if(trashArr.length === 0) {
             listDiv.innerHTML = '<div class="res-empty" style="padding:40px;text-align:center;"><div style="font-size:48px;margin-bottom:12px;">🗑️</div><div style="font-size:15px;color:var(--text3);">휴지통이 비어있습니다.</div></div>';
             return;
         }
 
-        db.trash.forEach((item, idx) => {
-            const totalTickets = item.pending.length + Object.keys(item.seats).length;
-            const assignedSeats = Object.keys(item.seats).map(k => {
+        trashArr.forEach((item, idx) => {
+            // 방어 코드: pending/seats가 없는 경우 대비
+            if(!item) return;
+            const pendingList = Array.isArray(item.pending) ? item.pending : [];
+            const seatsObj = (item.seats && typeof item.seats === 'object') ? item.seats : {};
+
+            const totalTickets = pendingList.length + Object.keys(seatsObj).length;
+            const assignedSeats = Object.keys(seatsObj).map(k => {
                 const parts = k.split('-');
                 return parts[1] + parts[2];
             }).join(', ');
 
-            const type = item.pending.length > 0 ? item.pending[0].type :
-                         Object.values(item.seats).length > 0 ? Object.values(item.seats)[0].type : '일반';
-            const method = item.pending.length > 0 ? item.pending[0].method :
-                           Object.values(item.seats).length > 0 ? Object.values(item.seats)[0].method : '-';
-            const reservedAt = item.pending.length > 0 ? item.pending[0].reservedAt :
-                               Object.values(item.seats).length > 0 ? Object.values(item.seats)[0].reservedAt : '-';
-            const memo = item.pending.length > 0 ? item.pending[0].memo :
-                         Object.values(item.seats).length > 0 ? Object.values(item.seats)[0].memo : '';
+            const type = pendingList.length > 0 ? pendingList[0].type :
+                         Object.values(seatsObj).length > 0 ? Object.values(seatsObj)[0].type : '일반';
+            const method = pendingList.length > 0 ? pendingList[0].method :
+                           Object.values(seatsObj).length > 0 ? Object.values(seatsObj)[0].method : '-';
+            const reservedAt = pendingList.length > 0 ? pendingList[0].reservedAt :
+                               Object.values(seatsObj).length > 0 ? Object.values(seatsObj)[0].reservedAt : '-';
+            const memo = pendingList.length > 0 ? pendingList[0].memo :
+                         Object.values(seatsObj).length > 0 ? Object.values(seatsObj)[0].memo : '';
 
             let bc = type==='후원/CMS'||type==='후원' ? 'badge-sponsor' : type==='VIP' ? 'badge-vip' : type==='단원/STAFF' ? 'badge-staff' : 'badge-normal';
             let borderColor = type==='후원/CMS'||type==='후원' ? 'var(--success)' : type==='VIP' ? 'var(--vip)' : type==='단원/STAFF' ? 'var(--staff)' : 'var(--danger)';
