@@ -1391,7 +1391,7 @@
         const show = document.getElementById('viewShowtime').value;
         let reserved=0, general=0, sponsor=0, vip=0, staff=0, pickedUp=0, pN=0, pO=0;
         Object.keys(db.seats).forEach(id => {
-            if(!id.startsWith(show+'-')) return;
+            if(!id.startsWith(showStr+'-')) return;
             reserved++;
             let t = db.seats[id].type;
             if(t==='일반') general++;
@@ -1504,10 +1504,11 @@
         }
     };
 
-    function buildGroups(show) {
+    function buildGroups(String(show)) {
+        const showStr = String(show); // 타입 통일
         const groups = new Map();
         db.pending.forEach(p => {
-            if(p.show!==show) return;
+            if(String(p.show)!==showStr) return;
             const k=p.name+'_'+p.phone;
             if(!groups.has(k)) groups.set(k,{name:p.name,phone:p.phone,type:p.type,method:p.method,manager:p.manager,total:0,pending:0,assigned:0,seats:[],pickedUpCount:0,overflowCount:0,reservedAt:p.reservedAt||'',memo:p.memo||'',smsConfirmed:p.smsConfirmed||false});
             const g=groups.get(k); g.total++; g.pending++; if(p.isOverflow) g.overflowCount++;
@@ -1519,7 +1520,7 @@
             if(p.smsConfirmed) g.smsConfirmed = true;
         });
         Object.keys(db.seats).forEach(id => {
-            if(!id.startsWith(show+'-')) return;
+            if(!id.startsWith(showStr+'-')) return;
             const s=db.seats[id], k=s.name+'_'+s.phone;
             if(!groups.has(k)) groups.set(k,{name:s.name,phone:s.phone,type:s.type,method:s.method,manager:s.manager,total:0,pending:0,assigned:0,seats:[],pickedUpCount:0,overflowCount:0,reservedAt:s.reservedAt||'',memo:s.memo||'',smsConfirmed:s.smsConfirmed||false});
             const g=groups.get(k); g.total++; g.assigned++; if(s.pickedUp) g.pickedUpCount++;
@@ -1535,7 +1536,7 @@
         const show = document.getElementById('viewShowtime').value;
         const listDiv = document.getElementById('reservationList');
         listDiv.innerHTML = '';
-        const groups = buildGroups(show);
+        const groups = buildGroups(String(show));
         if(groups.size===0){listDiv.innerHTML='<div class="res-empty">해당 회차에 내역이 없습니다.</div>';return;}
 
         // 정렬 적용
@@ -2147,7 +2148,7 @@ ${showtimeNames[newShow]}(으)로 변경하시겠습니까?`,
         const show = document.getElementById('mob-viewShowtime') ? document.getElementById('mob-viewShowtime').value : document.getElementById('viewShowtime').value;
         const listDiv = document.getElementById('mob-reservationList');
         listDiv.innerHTML='';
-        const groups = buildGroups(show);
+        const groups = buildGroups(String(show));
         if(groups.size===0){listDiv.innerHTML='<div class="res-empty">해당 회차에 내역이 없습니다.</div>';return;}
 
         const mobSortKey = document.getElementById('mob-resSortKey') ? document.getElementById('mob-resSortKey').value : 'reservedAt_asc';
