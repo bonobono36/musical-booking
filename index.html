@@ -1190,7 +1190,7 @@
     // 🔥 Firebase 실시간 리스너
     // ============================================================
     let listenerStarted = false;
-    function startFirebaseListener() {
+    window.startFirebaseListener = function() {
         if (listenerStarted) return;
         listenerStarted = true;
         const dbRef = ref(database, 'bookingData');
@@ -1242,27 +1242,27 @@
     // ============================================================
     // 유틸
     // ============================================================
-    function setSyncStatus(status, msg) {
+    window.setSyncStatus = function(status, msg) {
         const banner = document.getElementById('syncBanner');
         banner.className = status;
         banner.textContent = msg;
     }
 
-    function updateLastSync() {
+    window.updateLastSync = function() {
         const now = new Date();
         const t = `${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}:${now.getSeconds().toString().padStart(2,'0')}`;
         document.getElementById('lastSyncTime').textContent = '마지막 동기화: ' + t;
     }
 
-    function getUsableSeats(show) {
+    window.getUsableSeats = function(show) {
         return TOTAL_SEATS - (BLOCKED_SEATS_MAP[show] ? BLOCKED_SEATS_MAP[show].length : 0);
     }
 
-    function isBlockedSeat(show, row, num) {
+    window.isBlockedSeat = function(show, row, num) {
         return BLOCKED_SEATS_MAP[show] ? BLOCKED_SEATS_MAP[show].includes(row + num) : false;
     }
 
-    function isVIPZone(row, num) {
+    window.isVIPZone = function(row, num) {
         if (row === 'D' && num >= 5 && num <= 20) return true;
         if (['E','F','G','H'].includes(row) && num >= 4 && num <= 21) return true;
         if (row === 'I' && num >= 5 && num <= 20) return true;
@@ -1387,11 +1387,11 @@
         await _alert(name+'님 '+count+'매가 접수되었습니다.', '접수 완료');
     };
 
-    function updateDashboard() {
+    window.updateDashboard = function() {
         const show = document.getElementById('viewShowtime').value;
         let reserved=0, general=0, sponsor=0, vip=0, staff=0, pickedUp=0, pN=0, pO=0;
         Object.keys(db.seats).forEach(id => {
-            if(!id.startsWith(showStr+'-')) return;
+            if(!id.startsWith(show+'-')) return;
             reserved++;
             let t = db.seats[id].type;
             if(t==='일반') general++;
@@ -1504,7 +1504,7 @@
         }
     };
 
-    function buildGroups(show) {
+    window.buildGroups = function(show) {
         const showStr = String(show); // 타입 통일
         const groups = new Map();
         db.pending.forEach(p => {
@@ -1532,7 +1532,7 @@
         return groups;
     }
 
-    function renderSidebarReservationList() {
+    window.renderSidebarReservationList = function() {
         const show = document.getElementById('viewShowtime').value;
         const listDiv = document.getElementById('reservationList');
         listDiv.innerHTML = '';
@@ -1585,7 +1585,7 @@
         });
     }
 
-    function renderSeatingChart() {
+    window.renderSeatingChart = function() {
         const show = document.getElementById('viewShowtime').value;
         const chartDiv = document.getElementById('seatingChart');
         chartDiv.innerHTML = '';
@@ -1605,7 +1605,7 @@
         });
     }
 
-    function createSeat(show, row, num) {
+    window.createSeat = function(show, row, num) {
         const seatId=show+'-'+row+'-'+num, div=document.createElement('div');
         div.className='seat';
         if(isBlockedSeat(show,row,num)){
@@ -1710,7 +1710,7 @@
 
     window.closeModal = function(id) { document.getElementById(id).classList.add('hidden'); currentEditTarget=null; };
 
-    function renderDashboard() {
+    window.renderDashboard = function() {
         const tbody=document.getElementById('dashboardTbody'); tbody.innerHTML='';
         let sT=0,sR=0,sC=0;
         const info={1:"5/30 (토) 19:00",2:"5/31 (일) 14:00",3:"5/31 (일) 18:00",4:"6/06 (토) 19:00",5:"6/07 (일) 14:00",6:"6/07 (일) 18:00",7:"6/13 (토) 19:00"};
@@ -1800,7 +1800,7 @@
     // 🗑️ 휴지통 기능
     // ============================================================
 
-    function updateTrashBadge() {
+    window.updateTrashBadge = function() {
         const badge = document.getElementById('trashCountBadge');
         if(!badge) return;
         const trashArr = Array.isArray(db.trash) ? db.trash : [];
@@ -1809,7 +1809,7 @@
         badge.style.display = count > 0 ? 'inline' : 'none';
     }
 
-    function renderTrash() {
+    window.renderTrash = function() {
         updateTrashBadge();
         const listDiv = document.getElementById('trashList');
         if(!listDiv) return;
@@ -2085,7 +2085,7 @@ ${showtimeNames[newShow]}(으)로 변경하시겠습니까?`,
         await _alert(name+'님 '+count+'매가 접수되었습니다.', '접수 완료');
     };
 
-    function renderMobileSeat() {
+    window.renderMobileSeat = function() {
         const show = document.getElementById('mob-viewShowtime') ? document.getElementById('mob-viewShowtime').value : document.getElementById('viewShowtime').value;
         document.getElementById('viewShowtime').value = show;
 
@@ -2123,7 +2123,7 @@ ${showtimeNames[newShow]}(으)로 변경하시겠습니까?`,
         });
     }
 
-    function renderMobileDashboard() {
+    window.renderMobileDashboard = function() {
         const tbody=document.getElementById('mob-dashboardTbody'); tbody.innerHTML='';
         let sT=0,sR=0,sC=0;
         const info={1:"5/30 19:00",2:"5/31 14:00",3:"5/31 18:00",4:"6/06 19:00",5:"6/07 14:00",6:"6/07 18:00",7:"6/13 19:00"};
@@ -2144,7 +2144,7 @@ ${showtimeNames[newShow]}(으)로 변경하시겠습니까?`,
         tbody.appendChild(tr);
     }
 
-    function renderMobileResList() {
+    window.renderMobileResList = function() {
         const show = document.getElementById('mob-viewShowtime') ? document.getElementById('mob-viewShowtime').value : document.getElementById('viewShowtime').value;
         const listDiv = document.getElementById('mob-reservationList');
         listDiv.innerHTML='';
@@ -2180,7 +2180,7 @@ ${showtimeNames[newShow]}(으)로 변경하시겠습니까?`,
         });
     }
 
-    function renderMobileTotalList() {
+    window.renderMobileTotalList = function() {
         const fs = document.getElementById('mob-filterShowtime').value;
         const fk = document.getElementById('mob-filterKeyword').value.trim().toLowerCase();
         const fuEl = document.getElementById('mob-filterUnassigned');
@@ -2235,7 +2235,7 @@ ${showtimeNames[newShow]}(으)로 변경하시겠습니까?`,
         }
     };
 
-    function renderMobileWaitlist() {
+    window.renderMobileWaitlist = function() {
         const show = document.getElementById('mob-waitShowtime') ? document.getElementById('mob-waitShowtime').value : '1';
         const listDiv = document.getElementById('mob-waitList');
         listDiv.innerHTML='';
