@@ -1613,7 +1613,11 @@
             let total=assigned+pCount, rem=getUsableSeats(show)-total;
             if(add>rem&&!await _confirm(rem>0?"잔여 가용 좌석("+rem+"석)보다 추가 매수("+add+"매)가 많습니다.\n초과 인원은 대기 예매로 접수됩니다.\n진행하시겠습니까?":"전석 매진 상태입니다.\n추가 인원을 대기 예매로 접수하시겠습니까?", "매수 추가")) return;
             const changeReservedAt = new Date().toLocaleString('ko-KR', {year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});
-            for(let i=0;i<add;i++) db.pending.push({show,name,phone,type,method,manager,isOverflow:(total+i+1)>getUsableSeats(show),reservedAt:changeReservedAt});
+            // 기존 예약자의 memo/smsConfirmed 가져오기
+            let existMemo = '', existSms = false, existReservedAt = changeReservedAt;
+            db.pending.forEach(p => { if(String(p.show)===String(show)&&p.name===name&&p.phone===phone){ if(p.memo) existMemo=p.memo; if(p.smsConfirmed) existSms=true; if(p.reservedAt) existReservedAt=p.reservedAt; } });
+            Object.keys(db.seats).forEach(k => { if(k.startsWith(show+'-')){ let sv=db.seats[k]; if(sv.name===name&&sv.phone===phone){ if(sv.memo) existMemo=sv.memo; if(sv.smsConfirmed) existSms=true; if(sv.reservedAt) existReservedAt=sv.reservedAt; } } });
+            for(let i=0;i<add;i++) db.pending.push({show,name,phone,type,method,manager,memo:existMemo,smsConfirmed:existSms,isOverflow:(total+i+1)>getUsableSeats(show),reservedAt:existReservedAt});
             saveData(); await _alert(add+'매가 추가 접수되었습니다.', '추가 완료');
         } else {
             let reduce = currentTotal-newCount;
