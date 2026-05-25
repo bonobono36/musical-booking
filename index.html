@@ -321,6 +321,49 @@
 
         @keyframes spin { to { transform: rotate(360deg); } }
 
+        /* 좌석 검색 강조 */
+        .seat.highlight {
+            animation: seatPulse 0.8s ease-in-out infinite alternate;
+            z-index: 20;
+            transform: scale(1.2);
+            box-shadow: 0 0 0 3px #f39c12, 0 0 12px 4px rgba(243,156,18,0.6) !important;
+        }
+        @keyframes seatPulse {
+            from { box-shadow: 0 0 0 3px #f39c12, 0 0 8px 2px rgba(243,156,18,0.5); }
+            to   { box-shadow: 0 0 0 4px #e67e22, 0 0 18px 6px rgba(230,126,34,0.8); }
+        }
+        .seat.dimmed {
+            opacity: 0.25;
+            filter: grayscale(60%);
+        }
+        .seat-search-bar {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 10px 16px;
+            margin-bottom: 0;
+        }
+        .seat-search-bar input {
+            flex: 1;
+            padding: 7px 12px;
+            border: 1.5px solid var(--border);
+            border-radius: 6px;
+            font-size: 14px;
+            font-family: inherit;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .seat-search-bar input:focus { border-color: var(--accent); }
+        .seat-search-result {
+            font-size: 12px;
+            font-weight: 700;
+            white-space: nowrap;
+            min-width: 80px;
+        }
+
         /* ==========================================
            💬 커스텀 다이얼로그 (alert/confirm/prompt 대체)
         ========================================== */
@@ -678,6 +721,12 @@
                 <div class="legend-item"><div class="legend-dot" style="background:#E8E8E8;"></div> 불가석</div>
             </div>
         </div>
+        <div class="seat-search-bar">
+            <span style="font-size:14px;">🔍</span>
+            <input type="text" id="seatSearchInput" placeholder="이름으로 좌석 검색 (예: 홍길동)" oninput="searchSeat(this.value)" autocomplete="off">
+            <span class="seat-search-result" id="seatSearchResult" style="color:var(--text3);">검색어 입력</span>
+            <button class="btn-sm btn-sm-amber" onclick="clearSeatSearch()" style="white-space:nowrap;">✕ 초기화</button>
+        </div>
         <div class="seat-map-wrapper">
             <div class="stage-label">STAGE</div>
             <div class="seat-grid" id="seatingChart"></div>
@@ -976,7 +1025,11 @@
             <button id="btnCheckIn" class="btn-primary btn-sm-green">입장 확인</button>
             <button id="btnCancelSeat" class="btn-primary btn-danger">좌석 배정 취소</button>
         </div>
-        <div class="modal-actions" style="margin-top:10px;">
+        <div class="modal-actions" style="margin-top:8px;">
+            <button id="btnEditFromSeat" class="btn-primary btn-sm-amber" style="background:var(--accent);">✏️ 정보 수정</button>
+            <button id="btnChangeCountFromSeat" class="btn-primary btn-sm-blue">🎟️ 매수 변경</button>
+        </div>
+        <div class="modal-actions" style="margin-top:8px;">
             <button class="btn-primary" onclick="closeModal('seatModal')" style="background:var(--surface2);color:var(--text);border:1px solid var(--border);">닫기</button>
         </div>
     </div>
@@ -1341,11 +1394,78 @@
         saveData();
     };
 
+    // ============================================================
+    // 🔍 좌석 검색 강조 기능
+    // ============================================================
+    window.searchSeat = function(keyword) {
+        const kw = keyword.trim().toLowerCase();
+        const resultEl = document.getElementById('seatSearchResult');
+        const allSeats = document.querySelectorAll('#seatingChart .seat');
+
+        if(!kw) {
+            allSeats.forEach(s => { s.classList.remove('highlight','dimmed'); });
+            if(resultEl) resultEl.textContent = '검색어 입력';
+            resultEl.style.color = 'var(--text3)';
+            return;
+        }
+
+        const show = document.getElementById('viewShowtime').value;
+        let matchCount = 0;
+        let matchSeats = [];
+
+        // 매칭되는 좌석 ID 목록 수집
+        Object.keys(db.seats).forEach(seatId => {
+            if(!seatId.startsWith(show+'-')) return;
+            const s = db.seats[seatId];
+            if(s.name && s.name.toLowerCase().includes(kw)) {
+                matchSeats.push(seatId);
+                matchCount++;
+            }
+        });
+
+        // 좌석 DOM 강조
+        allSeats.forEach(seatEl => {
+            const seatId = seatEl.dataset.seatid;
+            if(!seatId) return;
+            if(matchSeats.includes(seatId)) {
+                seatEl.classList.add('highlight');
+                seatEl.classList.remove('dimmed');
+            } else {
+                seatEl.classList.remove('highlight');
+                if(matchCount > 0) seatEl.classList.add('dimmed');
+                else seatEl.classList.remove('dimmed');
+            }
+        });
+
+        if(resultEl) {
+            if(matchCount > 0) {
+                resultEl.textContent = matchCount + '석 발견';
+                resultEl.style.color = 'var(--accent)';
+            } else {
+                resultEl.textContent = '검색 결과 없음';
+                resultEl.style.color = 'var(--danger)';
+            }
+        }
+    };
+
+    window.clearSeatSearch = function() {
+        const input = document.getElementById('seatSearchInput');
+        if(input) input.value = '';
+        const resultEl = document.getElementById('seatSearchResult');
+        if(resultEl) { resultEl.textContent = '검색어 입력'; resultEl.style.color = 'var(--text3)'; }
+        document.querySelectorAll('#seatingChart .seat').forEach(s => {
+            s.classList.remove('highlight','dimmed');
+        });
+    };
+
     window.renderAll = function() {
         updateDashboard();
         renderSidebarReservationList();
         renderSeatingChart();
         updateTrashBadge();
+        // 검색어가 있으면 재렌더 후 강조 복원
+        const kwEl = document.getElementById('seatSearchInput');
+        if(kwEl && kwEl.value.trim()) setTimeout(() => window.searchSeat(kwEl.value), 50);
         if(document.getElementById('page-dash').classList.contains('active')) renderDashboard();
         if(document.getElementById('page-list').classList.contains('active')) renderTotalList();
         if(document.getElementById('page-wait').classList.contains('active')) renderWaitlist();
@@ -1578,7 +1698,6 @@
                 <div class="res-actions">
                     <button class="btn-sm btn-sm-amber" data-show="${show}" data-name="${g.name}" data-phone="${g.phone}" data-type="${g.type}" data-method="${g.method}" data-manager="${g.manager}" data-memo="${(g.memo||'').replace(/"/g,'&quot;')}" onclick="openEditInfoModalFromBtn(this)">수정</button>
                     <button class="btn-sm btn-sm-blue" onclick="changeTicketCount('${show}','${g.name}','${g.phone}','${g.type}','${g.method}','${g.manager}',${g.total},${g.pending})">매수변경</button>
-                    <button class="btn-sm" style="background:#8e24aa;color:white;padding:5px 10px;font-size:11px;font-weight:700;border-radius:5px;border:none;cursor:pointer;" onclick="changeShowtime('${show}','${g.name}','${g.phone}')">회차변경</button>
                     <button class="btn-sm btn-sm-red" onclick="cancelEntireReservation('${show}','${g.name}','${g.phone}')">전체취소</button>
                 </div>`;
             listDiv.appendChild(div);
@@ -1608,6 +1727,7 @@
     window.createSeat = function(show, row, num) {
         const seatId=show+'-'+row+'-'+num, div=document.createElement('div');
         div.className='seat';
+        div.dataset.seatid = seatId;  // 검색용 ID 저장
         if(isBlockedSeat(show,row,num)){
             div.classList.add('blocked'); div.innerHTML='X';
             div.onclick=()=>{if(isBlockedEditMode)toggleBlockedSeat(show,row,num);}; return div;
@@ -1630,6 +1750,36 @@
                 btnCI.className=s.pickedUp?'btn-primary':'btn-primary btn-sm-green';
                 btnCI.onclick=()=>{ db.seats[seatId].pickedUp=!db.seats[seatId].pickedUp; saveData(); closeModal('seatModal'); };
                 btnC.onclick=()=>{ db.pending.push({show,name:s.name,phone:s.phone,type:s.type,method:s.method,manager:s.manager,memo:s.memo||'',smsConfirmed:s.smsConfirmed||false,isOverflow:false,reservedAt:s.reservedAt||''}); delete db.seats[seatId]; saveData(); closeModal('seatModal'); };
+
+                // 수정 버튼
+                const btnEdit = document.getElementById('btnEditFromSeat');
+                if(btnEdit) {
+                    btnEdit.onclick = () => {
+                        closeModal('seatModal');
+                        openEditInfoModal(show, s.name, s.phone, s.type, s.method, s.manager, s.memo||'');
+                    };
+                }
+
+                // 매수 변경 버튼
+                const btnChangeCount = document.getElementById('btnChangeCountFromSeat');
+                if(btnChangeCount) {
+                    btnChangeCount.onclick = () => {
+                        // 해당 사람의 총 매수/미배정 계산
+                        let totalTickets = 0, pendingTickets = 0;
+                        db.pending.forEach(p => {
+                            if(String(p.show)===String(show) && p.name===s.name && p.phone===s.phone) { totalTickets++; pendingTickets++; }
+                        });
+                        Object.keys(db.seats).forEach(k => {
+                            if(k.startsWith(show+'-')) {
+                                let sv = db.seats[k];
+                                if(sv.name===s.name && sv.phone===s.phone) totalTickets++;
+                            }
+                        });
+                        closeModal('seatModal');
+                        changeTicketCount(show, s.name, s.phone, s.type, s.method, s.manager, totalTickets, pendingTickets);
+                    };
+                }
+
                 modal.classList.remove('hidden');
             };
         } else {
@@ -2173,7 +2323,6 @@ ${showtimeNames[newShow]}(으)로 변경하시겠습니까?`,
                 <div class="res-actions">
                     <button class="btn-sm btn-sm-amber" data-show="${show}" data-name="${g.name}" data-phone="${g.phone}" data-type="${g.type}" data-method="${g.method}" data-manager="${g.manager}" data-memo="${(g.memo||'').replace(/"/g,'&quot;')}" onclick="openEditInfoModalFromBtn(this)">수정</button>
                     <button class="btn-sm btn-sm-blue" onclick="changeTicketCount('${show}','${g.name}','${g.phone}','${g.type}','${g.method}','${g.manager}',${g.total},${g.pending})">매수변경</button>
-                    <button class="btn-sm" style="background:#8e24aa;color:white;padding:5px 10px;font-size:11px;font-weight:700;border-radius:5px;border:none;cursor:pointer;" onclick="changeShowtime('${show}','${g.name}','${g.phone}')">회차변경</button>
                     <button class="btn-sm btn-sm-red" onclick="cancelEntireReservation('${show}','${g.name}','${g.phone}')">전체취소</button>
                 </div>`;
             listDiv.appendChild(div);
@@ -2216,6 +2365,70 @@ ${showtimeNames[newShow]}(으)로 변경하시겠습니까?`,
 
     // 모바일 renderAll 오버라이드
     const _origRenderAll = window.renderAll;
+    // ============================================================
+    // 🔍 좌석 검색 강조 기능
+    // ============================================================
+    window.searchSeat = function(keyword) {
+        const kw = keyword.trim().toLowerCase();
+        const resultEl = document.getElementById('seatSearchResult');
+        const allSeats = document.querySelectorAll('#seatingChart .seat');
+
+        if(!kw) {
+            allSeats.forEach(s => { s.classList.remove('highlight','dimmed'); });
+            if(resultEl) resultEl.textContent = '검색어 입력';
+            resultEl.style.color = 'var(--text3)';
+            return;
+        }
+
+        const show = document.getElementById('viewShowtime').value;
+        let matchCount = 0;
+        let matchSeats = [];
+
+        // 매칭되는 좌석 ID 목록 수집
+        Object.keys(db.seats).forEach(seatId => {
+            if(!seatId.startsWith(show+'-')) return;
+            const s = db.seats[seatId];
+            if(s.name && s.name.toLowerCase().includes(kw)) {
+                matchSeats.push(seatId);
+                matchCount++;
+            }
+        });
+
+        // 좌석 DOM 강조
+        allSeats.forEach(seatEl => {
+            const seatId = seatEl.dataset.seatid;
+            if(!seatId) return;
+            if(matchSeats.includes(seatId)) {
+                seatEl.classList.add('highlight');
+                seatEl.classList.remove('dimmed');
+            } else {
+                seatEl.classList.remove('highlight');
+                if(matchCount > 0) seatEl.classList.add('dimmed');
+                else seatEl.classList.remove('dimmed');
+            }
+        });
+
+        if(resultEl) {
+            if(matchCount > 0) {
+                resultEl.textContent = matchCount + '석 발견';
+                resultEl.style.color = 'var(--accent)';
+            } else {
+                resultEl.textContent = '검색 결과 없음';
+                resultEl.style.color = 'var(--danger)';
+            }
+        }
+    };
+
+    window.clearSeatSearch = function() {
+        const input = document.getElementById('seatSearchInput');
+        if(input) input.value = '';
+        const resultEl = document.getElementById('seatSearchResult');
+        if(resultEl) { resultEl.textContent = '검색어 입력'; resultEl.style.color = 'var(--text3)'; }
+        document.querySelectorAll('#seatingChart .seat').forEach(s => {
+            s.classList.remove('highlight','dimmed');
+        });
+    };
+
     window.renderAll = function() {
         _origRenderAll();
         if(isMobile()) {
