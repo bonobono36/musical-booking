@@ -1702,6 +1702,7 @@
                 <div class="res-actions">
                     <button class="btn-sm btn-sm-amber" data-show="${show}" data-name="${g.name}" data-phone="${g.phone}" data-type="${g.type}" data-method="${g.method}" data-manager="${g.manager}" data-memo="${(g.memo||'').replace(/"/g,'&quot;')}" onclick="openEditInfoModalFromBtn(this)">수정</button>
                     <button class="btn-sm btn-sm-blue" onclick="changeTicketCount('${show}','${g.name}','${g.phone}','${g.type}','${g.method}','${g.manager}',${g.total},${g.pending})">매수변경</button>
+                    <button class="btn-sm" style="background:#8e24aa;color:white;padding:5px 10px;font-size:11px;font-weight:700;border-radius:5px;border:none;cursor:pointer;" onclick="changeShowtime('${show}','${g.name}','${g.phone}')">회차변경</button>
                     <button class="btn-sm btn-sm-red" onclick="cancelEntireReservation('${show}','${g.name}','${g.phone}')">전체취소</button>
                 </div>`;
             listDiv.appendChild(div);
@@ -2329,6 +2330,7 @@ ${showtimeNames[newShow]}(으)로 변경하시겠습니까?`,
                 <div class="res-actions">
                     <button class="btn-sm btn-sm-amber" data-show="${show}" data-name="${g.name}" data-phone="${g.phone}" data-type="${g.type}" data-method="${g.method}" data-manager="${g.manager}" data-memo="${(g.memo||'').replace(/"/g,'&quot;')}" onclick="openEditInfoModalFromBtn(this)">수정</button>
                     <button class="btn-sm btn-sm-blue" onclick="changeTicketCount('${show}','${g.name}','${g.phone}','${g.type}','${g.method}','${g.manager}',${g.total},${g.pending})">매수변경</button>
+                    <button class="btn-sm" style="background:#8e24aa;color:white;padding:5px 10px;font-size:11px;font-weight:700;border-radius:5px;border:none;cursor:pointer;" onclick="changeShowtime('${show}','${g.name}','${g.phone}')">회차변경</button>
                     <button class="btn-sm btn-sm-red" onclick="cancelEntireReservation('${show}','${g.name}','${g.phone}')">전체취소</button>
                 </div>`;
             listDiv.appendChild(div);
