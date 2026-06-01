@@ -722,16 +722,21 @@
                 <div class="legend-item"><div class="legend-dot" style="background:#E8E8E8;"></div> 불가석</div>
             </div>
         </div>
+        <div style="display:flex;justify-content:flex-end;margin-bottom:8px;">
+            <button class="btn-sm btn-sm-blue" onclick="downloadSeatMap()" style="padding:8px 16px;font-size:13px;">🖼️ 좌석 배치표 이미지 저장</button>
+        </div>
         <div class="seat-search-bar">
             <span style="font-size:14px;">🔍</span>
             <input type="text" id="seatSearchInput" placeholder="이름으로 좌석 검색 (예: 홍길동)" oninput="searchSeat(this.value)" autocomplete="off">
             <span class="seat-search-result" id="seatSearchResult" style="color:var(--text3);">검색어 입력</span>
             <button class="btn-sm btn-sm-amber" onclick="clearSeatSearch()" style="white-space:nowrap;">✕ 초기화</button>
         </div>
-        <div class="seat-map-wrapper">
-            <div class="stage-label">STAGE</div>
-            <div class="seat-grid" id="seatingChart"></div>
-            <div class="console-label">CONSOLE</div>
+        <div id="seat-map-capture-area" style="background:#fff;padding:16px;border-radius:8px;">
+            <div class="seat-map-wrapper" style="border-radius:8px;">
+                <div class="stage-label">STAGE</div>
+                <div class="seat-grid" id="seatingChart"></div>
+                <div class="console-label">CONSOLE</div>
+            </div>
         </div>
     </div>
 </div>
@@ -1092,6 +1097,9 @@
         </div>
     </div>
 </div>
+
+<!-- 좌석 배치표 이미지 저장용 라이브러리 -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
 <script type="module">
     import { initializeApp }                              from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
@@ -1475,6 +1483,81 @@
         document.querySelectorAll('#seatingChart .seat').forEach(s => {
             s.classList.remove('highlight','dimmed');
         });
+    };
+
+    // ============================================================
+    // 🖼️ 좌석 배치표 이미지 저장
+    // ============================================================
+    window.downloadSeatMap = async function() {
+        const show = document.getElementById('viewShowtime').value;
+        const showtimeNames = {
+            '1':'1회차 (5/30 토 19:00)', '2':'2회차 (5/31 일 14:00)', '3':'3회차 (5/31 일 18:00)',
+            '4':'4회차 (6/06 토 19:00)', '5':'5회차 (6/07 일 14:00)', '6':'6회차 (6/07 일 18:00)',
+            '7':'7회차 (6/13 토 19:00)'
+        };
+
+        const banner = document.getElementById('syncBanner');
+        const origText = banner.textContent;
+        const origBg = banner.style.background;
+        banner.textContent = '🖼️ 이미지 생성 중...';
+        banner.style.background = '#2980b9';
+
+        try {
+            const target = document.getElementById('seat-map-capture-area');
+
+            const canvas = await html2canvas(target, {
+                backgroundColor: '#ffffff',
+                scale: 2, // 고해상도
+                useCORS: true,
+                logging: false,
+                scrollX: 0,
+                scrollY: 0
+            });
+
+            // 캔버스에 제목 추가
+            const finalCanvas = document.createElement('canvas');
+            const padding = 60;
+            finalCanvas.width = canvas.width;
+            finalCanvas.height = canvas.height + padding;
+            const ctx = finalCanvas.getContext('2d');
+
+            // 배경
+            ctx.fillStyle = '#1A3263';
+            ctx.fillRect(0, 0, finalCanvas.width, padding);
+
+            // 제목 텍스트
+            ctx.fillStyle = 'white';
+            ctx.font = `bold ${Math.round(finalCanvas.width * 0.018)}px Malgun Gothic, sans-serif`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            const title = document.getElementById('editableTitle').innerText;
+            ctx.fillText(`${title} — ${showtimeNames[show]} 좌석 배치표`, finalCanvas.width / 2, padding / 2);
+
+            // 좌석 배치도 붙이기
+            ctx.drawImage(canvas, 0, padding);
+
+            // 다운로드
+            const link = document.createElement('a');
+            link.download = `빛의여로_${showtimeNames[show]}_좌석배치표.png`;
+            link.href = finalCanvas.toDataURL('image/png');
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+            banner.textContent = '✅ 이미지 저장 완료!';
+            banner.style.background = '#27ae60';
+            setTimeout(() => {
+                banner.textContent = origText;
+                banner.style.background = origBg;
+            }, 2000);
+        } catch(e) {
+            banner.textContent = '❌ 이미지 저장 실패: ' + e.message;
+            banner.style.background = '#e74c3c';
+            setTimeout(() => {
+                banner.textContent = origText;
+                banner.style.background = origBg;
+            }, 3000);
+        }
     };
 
     window.renderAll = function() {
@@ -2487,6 +2570,81 @@ ${showtimeNames[newShow]}(으)로 변경하시겠습니까?`,
         document.querySelectorAll('#seatingChart .seat').forEach(s => {
             s.classList.remove('highlight','dimmed');
         });
+    };
+
+    // ============================================================
+    // 🖼️ 좌석 배치표 이미지 저장
+    // ============================================================
+    window.downloadSeatMap = async function() {
+        const show = document.getElementById('viewShowtime').value;
+        const showtimeNames = {
+            '1':'1회차 (5/30 토 19:00)', '2':'2회차 (5/31 일 14:00)', '3':'3회차 (5/31 일 18:00)',
+            '4':'4회차 (6/06 토 19:00)', '5':'5회차 (6/07 일 14:00)', '6':'6회차 (6/07 일 18:00)',
+            '7':'7회차 (6/13 토 19:00)'
+        };
+
+        const banner = document.getElementById('syncBanner');
+        const origText = banner.textContent;
+        const origBg = banner.style.background;
+        banner.textContent = '🖼️ 이미지 생성 중...';
+        banner.style.background = '#2980b9';
+
+        try {
+            const target = document.getElementById('seat-map-capture-area');
+
+            const canvas = await html2canvas(target, {
+                backgroundColor: '#ffffff',
+                scale: 2, // 고해상도
+                useCORS: true,
+                logging: false,
+                scrollX: 0,
+                scrollY: 0
+            });
+
+            // 캔버스에 제목 추가
+            const finalCanvas = document.createElement('canvas');
+            const padding = 60;
+            finalCanvas.width = canvas.width;
+            finalCanvas.height = canvas.height + padding;
+            const ctx = finalCanvas.getContext('2d');
+
+            // 배경
+            ctx.fillStyle = '#1A3263';
+            ctx.fillRect(0, 0, finalCanvas.width, padding);
+
+            // 제목 텍스트
+            ctx.fillStyle = 'white';
+            ctx.font = `bold ${Math.round(finalCanvas.width * 0.018)}px Malgun Gothic, sans-serif`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            const title = document.getElementById('editableTitle').innerText;
+            ctx.fillText(`${title} — ${showtimeNames[show]} 좌석 배치표`, finalCanvas.width / 2, padding / 2);
+
+            // 좌석 배치도 붙이기
+            ctx.drawImage(canvas, 0, padding);
+
+            // 다운로드
+            const link = document.createElement('a');
+            link.download = `빛의여로_${showtimeNames[show]}_좌석배치표.png`;
+            link.href = finalCanvas.toDataURL('image/png');
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+            banner.textContent = '✅ 이미지 저장 완료!';
+            banner.style.background = '#27ae60';
+            setTimeout(() => {
+                banner.textContent = origText;
+                banner.style.background = origBg;
+            }, 2000);
+        } catch(e) {
+            banner.textContent = '❌ 이미지 저장 실패: ' + e.message;
+            banner.style.background = '#e74c3c';
+            setTimeout(() => {
+                banner.textContent = origText;
+                banner.style.background = origBg;
+            }, 3000);
+        }
     };
 
     window.renderAll = function() {
