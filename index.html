@@ -630,6 +630,7 @@
     <button class="top-tab" id="nav-list" onclick="switchTopTab('list')">📋 통합 예매 리스트</button>
     <button class="top-tab" id="nav-wait" onclick="switchTopTab('wait')">⏳ 대기자 명단</button>
     <button class="top-tab" id="nav-trash" onclick="switchTopTab('trash')">🗑️ 휴지통 <span id="trashCountBadge" style="background:var(--danger);color:white;border-radius:10px;padding:1px 7px;font-size:11px;margin-left:4px;display:none;">0</span></button>
+    <button class="top-tab" id="nav-config" onclick="switchTopTab('config')">⚙️ 회차 설정</button>
 </div>
 
 <!-- PAGE 1 -->
@@ -1266,6 +1267,7 @@
                 db.title    = data.title    || '2026 빛의 여로';
                 db.trash    = data.trash    || [];
                 if (data.blockedMap) BLOCKED_SEATS_MAP = data.blockedMap;
+                if (data.appConfig) applyConfig(data.appConfig);
             }
             document.getElementById('editableTitle').innerText = db.title;
             document.title = db.title + ' 예매 관리 시스템';
@@ -1289,7 +1291,8 @@
                 seats: db.seats,
                 title: db.title,
                 trash: db.trash || [],
-                blockedMap: BLOCKED_SEATS_MAP
+                blockedMap: BLOCKED_SEATS_MAP,
+                appConfig: appConfig
             });
             setSyncStatus('connected', '🟢 Firebase 실시간 연동 중 — 모든 변경사항이 자동으로 공유됩니다');
             updateLastSync();
@@ -1349,7 +1352,7 @@
     };
 
     window.switchTopTab = function(tab) {
-        ['main','dash','list','wait','trash'].forEach(t => {
+        ['main','dash','list','wait','trash','config'].forEach(t => {
             document.getElementById('nav-'+t).classList.remove('active');
             document.getElementById('page-'+t).classList.remove('active');
         });
@@ -1359,6 +1362,7 @@
         if(tab==='list') renderTotalList();
         if(tab==='wait') renderWaitlist();
         if(tab==='trash') { renderTrash(); }
+        if(tab==='config') { renderConfigPage(); }
     };
 
     window.switchSidebarTab = function(tab) {
@@ -2091,6 +2095,156 @@
     };
 
     // ============================================================
+    // ⚙️ 회차 설정 기능
+    // ============================================================
+
+    // 기본 회차 정보
+    const DEFAULT_SHOWS = [
+        {num:1, date:'5/30', day:'토', time:'19:00'},
+        {num:2, date:'5/31', day:'일', time:'14:00'},
+        {num:3, date:'5/31', day:'일', time:'18:00'},
+        {num:4, date:'6/06', day:'토', time:'19:00'},
+        {num:5, date:'6/07', day:'일', time:'14:00'},
+        {num:6, date:'6/07', day:'일', time:'18:00'},
+        {num:7, date:'6/13', day:'토', time:'19:00'},
+    ];
+
+    // 현재 설정값 (Firebase에서 로드)
+    let appConfig = { showCount: 7, shows: [...DEFAULT_SHOWS] };
+
+    // Firebase 리스너에서 config 로드 (기존 onValue 안에 추가됨)
+    function applyConfig(cfg) {
+        if(!cfg) return;
+        appConfig.showCount = cfg.showCount || 7;
+        appConfig.shows = cfg.shows || [...DEFAULT_SHOWS];
+        updateAllShowtimeSelects();
+    }
+
+    // 모든 회차 선택 드롭다운 업데이트
+    window.updateAllShowtimeSelects = function() {
+        const selectIds = ['viewShowtime','filterShowtime','waitlistShowtime','waitlistShowtime','mob-viewShowtime','mob-filterShowtime','mob-waitShowtime','newShowtime'];
+        selectIds.forEach(id => {
+            const sel = document.getElementById(id);
+            if(!sel) return;
+            const curVal = sel.value;
+            sel.innerHTML = '';
+            // filterShowtime은 '전체 회차' 옵션 추가
+            if(id === 'filterShowtime' || id === 'mob-filterShowtime') {
+                const opt = document.createElement('option');
+                opt.value = 'all'; opt.textContent = '전체 회차';
+                sel.appendChild(opt);
+            }
+            for(let i=0; i<appConfig.showCount; i++) {
+                const s = appConfig.shows[i] || {num:i+1,date:'미정',day:'',time:''};
+                const opt = document.createElement('option');
+                opt.value = String(i+1);
+                opt.textContent = `${i+1}회차 (${s.date} ${s.day} ${s.time})`;
+                sel.appendChild(opt);
+            }
+            // 기존 선택값 유지
+            if(curVal) sel.value = curVal;
+        });
+    };
+
+    window.renderConfigPage = function() {
+        // 타이틀
+        const titleEl = document.getElementById('configTitle');
+        if(titleEl) titleEl.value = db.title || '2026 빛의 여로';
+
+        // 회차 수
+        const countEl = document.getElementById('configShowCount');
+        if(countEl) { countEl.value = String(appConfig.showCount); }
+
+        renderConfigRows();
+    };
+
+    window.renderConfigRows = function() {
+        const count = parseInt(document.getElementById('configShowCount').value) || 7;
+        const container = document.getElementById('configRows');
+        if(!container) return;
+        container.innerHTML = '';
+
+        const days = ['월','화','수','목','금','토','일'];
+
+        for(let i=0; i<count; i++) {
+            const s = appConfig.shows[i] || {num:i+1, date:'', day:'토', time:'19:00'};
+            const row = document.createElement('div');
+            row.style.cssText = 'display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--border);flex-wrap:wrap;';
+            row.innerHTML = `
+                <div style="width:60px;font-size:14px;font-weight:700;color:var(--primary);">${i+1}회차</div>
+                <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                    <div>
+                        <label style="font-size:11px;color:var(--text3);display:block;margin-bottom:3px;">날짜 (예: 5/30)</label>
+                        <input type="text" id="cfg-date-${i}" value="${s.date||''}" placeholder="5/30"
+                            style="width:80px;padding:7px 10px;border:1.5px solid var(--border);border-radius:6px;font-size:13px;font-family:inherit;outline:none;">
+                    </div>
+                    <div>
+                        <label style="font-size:11px;color:var(--text3);display:block;margin-bottom:3px;">요일</label>
+                        <select id="cfg-day-${i}" style="width:65px;padding:7px 8px;border:1.5px solid var(--border);border-radius:6px;font-size:13px;font-family:inherit;outline:none;">
+                            ${days.map(d=>`<option value="${d}" ${s.day===d?'selected':''}>${d}요일</option>`).join('')}
+                        </select>
+                    </div>
+                    <div>
+                        <label style="font-size:11px;color:var(--text3);display:block;margin-bottom:3px;">시간</label>
+                        <input type="text" id="cfg-time-${i}" value="${s.time||''}" placeholder="19:00"
+                            style="width:80px;padding:7px 10px;border:1.5px solid var(--border);border-radius:6px;font-size:13px;font-family:inherit;outline:none;">
+                    </div>
+                    <div style="margin-top:16px;font-size:13px;color:var(--text3);">
+                        → <strong style="color:var(--primary-dark);">${i+1}회차 (${s.date||'?'} ${s.day||'?'} ${s.time||'?'})</strong>
+                    </div>
+                </div>
+            `;
+            container.appendChild(row);
+
+            // 실시간 미리보기
+            ['cfg-date-','cfg-day-','cfg-time-'].forEach(prefix => {
+                const el = document.getElementById(prefix+i);
+                if(el) el.addEventListener('input', () => updateConfigPreview(i));
+                if(el) el.addEventListener('change', () => updateConfigPreview(i));
+            });
+        }
+    };
+
+    function updateConfigPreview(i) {
+        const date = document.getElementById('cfg-date-'+i)?.value || '?';
+        const day  = document.getElementById('cfg-day-'+i)?.value || '?';
+        const time = document.getElementById('cfg-time-'+i)?.value || '?';
+        const row = document.getElementById('configRows').children[i];
+        if(!row) return;
+        const preview = row.querySelector('strong');
+        if(preview) preview.textContent = `${i+1}회차 (${date} ${day} ${time})`;
+    }
+
+    window.saveConfig = async function() {
+        const count = parseInt(document.getElementById('configShowCount').value) || 7;
+        const newTitle = document.getElementById('configTitle').value.trim() || '2026 빛의 여로';
+        const newShows = [];
+
+        for(let i=0; i<count; i++) {
+            newShows.push({
+                num:  i+1,
+                date: document.getElementById('cfg-date-'+i)?.value.trim() || '',
+                day:  document.getElementById('cfg-day-'+i)?.value || '토',
+                time: document.getElementById('cfg-time-'+i)?.value.trim() || ''
+            });
+        }
+
+        appConfig.showCount = count;
+        appConfig.shows = newShows;
+        db.title = newTitle;
+
+        document.getElementById('editableTitle').innerText = newTitle;
+        document.title = newTitle + ' 예매 관리 시스템';
+
+        // Firebase에 저장
+        await saveData();
+        updateAllShowtimeSelects();
+        renderAll();
+        await _alert(`설정이 저장되었습니다!
+총 ${count}회차로 적용됩니다.`, '저장 완료');
+    };
+
+    // ============================================================
     // 🗑️ 휴지통 기능
     // ============================================================
 
@@ -2709,4 +2863,39 @@ ${showtimeNames[newShow]}(으)로 변경하시겠습니까?`,
 
 </script>
 </body>
-</html>
+</html><!-- PAGE: ⚙️ 회차 설정 -->
+<div id="page-config" class="page" style="flex-direction:column;overflow-y:auto;padding:24px;background:var(--surface2);">
+    <div class="main-header" style="margin-bottom:20px;">
+        <div class="main-title">⚙️ 회차 설정</div>
+        <button class="btn-sm btn-sm-green" onclick="saveConfig()" style="padding:10px 20px;font-size:14px;">💾 설정 저장 및 적용</button>
+    </div>
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:20px;">
+        <div style="font-size:14px;font-weight:700;color:var(--primary-dark);margin-bottom:16px;">📋 공연 기본 정보</div>
+        <div class="form-row" style="max-width:500px;">
+            <label style="font-size:13px;font-weight:700;color:var(--text2);margin-bottom:6px;display:block;">공연 타이틀</label>
+            <input type="text" id="configTitle" placeholder="예: 2026 빛의 여로" style="width:100%;padding:10px 14px;border:1.5px solid var(--border);border-radius:8px;font-size:15px;font-family:inherit;outline:none;">
+        </div>
+        <div class="form-row" style="max-width:200px;margin-top:12px;">
+            <label style="font-size:13px;font-weight:700;color:var(--text2);margin-bottom:6px;display:block;">총 회차 수</label>
+            <select id="configShowCount" onchange="renderConfigRows()" style="width:100%;padding:10px 14px;border:1.5px solid var(--border);border-radius:8px;font-size:15px;font-family:inherit;outline:none;">
+                <option value="1">1회차</option><option value="2">2회차</option><option value="3">3회차</option>
+                <option value="4">4회차</option><option value="5">5회차</option><option value="6">6회차</option>
+                <option value="7" selected>7회차</option><option value="8">8회차</option>
+                <option value="9">9회차</option><option value="10">10회차</option>
+            </select>
+        </div>
+    </div>
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;">
+        <div style="font-size:14px;font-weight:700;color:var(--primary-dark);margin-bottom:16px;">🗓️ 회차별 날짜 및 시간 설정</div>
+        <div style="font-size:12px;color:var(--text3);margin-bottom:16px;">※ 설정 저장 후 모든 회차 선택 드롭다운과 현황 화면에 즉시 반영됩니다.</div>
+        <div id="configRows"></div>
+    </div>
+    <div style="background:#fff3e0;border:1px solid #f57c00;border-radius:12px;padding:16px;margin-top:20px;">
+        <div style="font-size:13px;font-weight:700;color:#e65100;margin-bottom:8px;">⚠️ 주의사항</div>
+        <div style="font-size:12px;color:#bf360c;line-height:1.8;">
+            • 회차 수를 줄여도 해당 회차의 예매 데이터는 그대로 유지됩니다.<br>
+            • 날짜/시간 변경은 화면 표시만 바뀌며 기존 예매 데이터에는 영향을 주지 않습니다.<br>
+            • 새 공연 시작 시 Firebase 콘솔에서 데이터를 먼저 초기화해주세요.
+        </div>
+    </div>
+</div>
