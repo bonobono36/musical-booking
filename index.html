@@ -1023,12 +1023,12 @@
         <h2>🎫 좌석 상세 정보 및 관리</h2>
         <div id="modalSeatInfo" class="modal-seat-info"></div>
         <div class="modal-actions">
-            <button id="btnCheckIn" class="btn-primary btn-sm-green">입장 확인</button>
-            <button id="btnCancelSeat" class="btn-primary btn-danger">좌석 배정 취소</button>
-        </div>
-        <div class="modal-actions" style="margin-top:8px;">
             <button id="btnEditFromSeat" class="btn-primary btn-sm-amber" style="background:var(--accent);">✏️ 정보 수정</button>
             <button id="btnChangeCountFromSeat" class="btn-primary btn-sm-blue">🎟️ 매수 변경</button>
+        </div>
+        <div class="modal-actions" style="margin-top:8px;">
+            <button id="btnCancelSeat" class="btn-primary btn-danger">좌석 배정 취소</button>
+            <button id="btnCancelAllFromSeat" class="btn-primary btn-danger">🗑️ 전체 취소</button>
         </div>
         <div class="modal-actions" style="margin-top:8px;">
             <button class="btn-primary" onclick="closeModal('seatModal')" style="background:var(--surface2);color:var(--text);border:1px solid var(--border);">닫기</button>
@@ -1791,16 +1791,14 @@
                 }
 
                 const modal=document.getElementById('seatModal'), info=document.getElementById('modalSeatInfo');
-                const btnCI=document.getElementById('btnCheckIn'), btnC=document.getElementById('btnCancelSeat');
+                const btnC=document.getElementById('btnCancelSeat');
                 let total=0;
                 db.pending.forEach(p=>{if(p.show===show&&p.name===s.name&&p.phone===s.phone)total++;});
                 Object.keys(db.seats).forEach(k=>{if(k.startsWith(show+'-')){let x=db.seats[k];if(x.name===s.name&&x.phone===s.phone)total++;}});
                 const memoHtml = s.memo ? `<br><strong>메모:</strong> <span style="background:#fffde7;border:1px solid #f9a825;border-radius:4px;padding:1px 6px;color:#7b5e00;">📌 ${s.memo}</span>` : '';
                 const smsHtml = `<br><strong>문자발송:</strong> <span style="font-weight:bold;color:${s.smsConfirmed?'#27ae60':'#e65100'}">${s.smsConfirmed?'📱 발송완료':'📵 미발송'}</span>`;
-                info.innerHTML=`<strong>좌석번호: ${row}-${num}</strong><br><br><strong>예약자:</strong> ${s.name}님 (${s.type})<br><strong>연락처:</strong> ${s.phone}<br><strong>관람 매수:</strong> 총 ${total}매<br><strong>예매경로:</strong> ${s.method} / 담당: ${s.manager}${memoHtml}${smsHtml}<br><strong>상태:</strong> <span style="color:${s.pickedUp?'#27ae60':'#e74c3c'};font-weight:bold;">${s.pickedUp?'✅ 입장 완료':'⏳ 수령 대기'}</span>`;
-                btnCI.innerText=s.pickedUp?'입장 확인 취소':'입장(수령) 확인';
-                btnCI.className=s.pickedUp?'btn-primary':'btn-primary btn-sm-green';
-                btnCI.onclick=()=>{ db.seats[seatId].pickedUp=!db.seats[seatId].pickedUp; saveData(); closeModal('seatModal'); };
+                const checkinHtml = `<br><strong>입장 상태:</strong> <span style="color:${s.pickedUp?'#27ae60':'#e74c3c'};font-weight:bold;">${s.pickedUp?'✅ 입장 완료':'⏳ 수령 대기'}</span>`;
+                info.innerHTML=`<strong>좌석번호: ${row}-${num}</strong><br><br><strong>예약자:</strong> ${s.name}님 (${s.type})<br><strong>연락처:</strong> ${s.phone}<br><strong>관람 매수:</strong> 총 ${total}매<br><strong>예매경로:</strong> ${s.method} / 담당: ${s.manager}${memoHtml}${smsHtml}${checkinHtml}`;
                 btnC.onclick=()=>{ db.pending.push({show,name:s.name,phone:s.phone,type:s.type,method:s.method,manager:s.manager,memo:s.memo||'',smsConfirmed:s.smsConfirmed||false,isOverflow:false,reservedAt:s.reservedAt||''}); delete db.seats[seatId]; saveData(); closeModal('seatModal'); };
 
                 // 수정 버튼
@@ -1809,6 +1807,15 @@
                     btnEdit.onclick = () => {
                         closeModal('seatModal');
                         openEditInfoModal(show, s.name, s.phone, s.type, s.method, s.manager, s.memo||'');
+                    };
+                }
+
+                // 전체 취소 버튼
+                const btnCancelAll = document.getElementById('btnCancelAllFromSeat');
+                if(btnCancelAll) {
+                    btnCancelAll.onclick = () => {
+                        closeModal('seatModal');
+                        cancelEntireReservation(show, s.name, s.phone);
                     };
                 }
 
