@@ -707,7 +707,10 @@
                 <button id="toggleEditModeBtn" class="btn-sm btn-sm-red" onclick="toggleEditMode()" style="padding:6px 12px;font-size:13px;margin-left:10px;">🛠 불가석 지정 모드: 켜기</button>
                 <button id="toggleCheckInModeBtn" class="btn-sm btn-sm-green" onclick="toggleCheckInMode()" style="padding:6px 12px;font-size:13px;margin-left:6px;">✅ 입장확인 모드: 켜기</button>
             </div>
-            <button class="btn-sm btn-sm-green" onclick="exportToExcel()" style="padding:8px 16px;font-size:13px;">📥 엑셀(CSV) 다운로드</button>
+            <div style="display:flex;gap:8px;">
+                <button class="btn-sm btn-sm-blue" onclick="downloadSeatMap()" style="padding:8px 16px;font-size:13px;">🖼️ 좌석 배치표 저장</button>
+                <button class="btn-sm btn-sm-green" onclick="exportToExcel()" style="padding:8px 16px;font-size:13px;">📥 엑셀(CSV) 다운로드</button>
+            </div>
         </div>
         <div class="stats-row" id="statsRow"></div>
         <div class="main-header" style="background:var(--surface);padding:12px 20px;border-radius:8px;border:1px solid var(--border);margin-bottom:0;">
@@ -721,9 +724,6 @@
                 <div class="legend-item"><div class="legend-dot" style="background:#fff3e0;border-color:#f57c00;"></div> 단원/STAFF</div>
                 <div class="legend-item"><div class="legend-dot" style="background:#E8E8E8;"></div> 불가석</div>
             </div>
-        </div>
-        <div style="display:flex;justify-content:flex-end;margin-bottom:8px;">
-            <button class="btn-sm btn-sm-blue" onclick="downloadSeatMap()" style="padding:8px 16px;font-size:13px;">🖼️ 좌석 배치표 이미지 저장</button>
         </div>
         <div class="seat-search-bar">
             <span style="font-size:14px;">🔍</span>
@@ -1507,11 +1507,13 @@
 
             const canvas = await html2canvas(target, {
                 backgroundColor: '#ffffff',
-                scale: 2, // 고해상도
+                scale: 3, // 고해상도 (3배)
                 useCORS: true,
                 logging: false,
                 scrollX: 0,
-                scrollY: 0
+                scrollY: 0,
+                letterRendering: true,
+                allowTaint: false
             });
 
             // 캔버스에 제목 추가
@@ -2594,11 +2596,13 @@ ${showtimeNames[newShow]}(으)로 변경하시겠습니까?`,
 
             const canvas = await html2canvas(target, {
                 backgroundColor: '#ffffff',
-                scale: 2, // 고해상도
+                scale: 3, // 고해상도 (3배)
                 useCORS: true,
                 logging: false,
                 scrollX: 0,
-                scrollY: 0
+                scrollY: 0,
+                letterRendering: true,
+                allowTaint: false
             });
 
             // 캔버스에 제목 추가
