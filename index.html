@@ -705,6 +705,7 @@
                     <option value="7">7회차 (6/13 토 19:00)</option>
                 </select>
                 <button id="toggleEditModeBtn" class="btn-sm btn-sm-red" onclick="toggleEditMode()" style="padding:6px 12px;font-size:13px;margin-left:10px;">🛠 불가석 지정 모드: 켜기</button>
+                <button id="toggleCheckInModeBtn" class="btn-sm btn-sm-green" onclick="toggleCheckInMode()" style="padding:6px 12px;font-size:13px;margin-left:6px;">✅ 입장확인 모드: 켜기</button>
             </div>
             <button class="btn-sm btn-sm-green" onclick="exportToExcel()" style="padding:8px 16px;font-size:13px;">📥 엑셀(CSV) 다운로드</button>
         </div>
@@ -1183,6 +1184,7 @@
     // ============================================================
     const TOTAL_SEATS = 298;
     let isBlockedEditMode = false;
+    let isCheckInMode = false; // 입장확인 모드
     let currentEditTarget = null;
     let isSaving = false;
 
@@ -1368,11 +1370,28 @@
         const btn = document.getElementById('toggleEditModeBtn');
         btn.innerText = isBlockedEditMode ? '🛠 불가석 지정 모드: 켜짐 (끄기)' : '🛠 불가석 지정 모드: 켜기';
         btn.className = isBlockedEditMode ? 'btn-sm btn-sm-blue' : 'btn-sm btn-sm-red';
+        if(isBlockedEditMode && isCheckInMode) toggleCheckInMode();
         if(isBlockedEditMode) await _alert('불가석 직접 지정 모드가 활성화되었습니다.\n좌석을 클릭하면 불가석으로 추가/해제됩니다.', '불가석 모드 켜짐');
     };
 
     window.toggleCheckInFromList = function(seatId) {
         if(db.seats[seatId]) { db.seats[seatId].pickedUp = !db.seats[seatId].pickedUp; saveData(); }
+    };
+
+    window.toggleCheckInMode = function() {
+        isCheckInMode = !isCheckInMode;
+        const btn = document.getElementById('toggleCheckInModeBtn');
+        if(isCheckInMode) {
+            if(isBlockedEditMode) { isBlockedEditMode=false; const eb=document.getElementById('toggleEditModeBtn'); eb.innerText='🛠 불가석 지정 모드: 켜기'; eb.className='btn-sm btn-sm-red'; }
+            btn.innerText = '✅ 입장확인 모드: 켜짐 (끄기)';
+            btn.style.boxShadow = '0 0 0 3px rgba(39,174,96,0.5)';
+            document.getElementById('syncBanner').style.background = '#1a7a42';
+            document.getElementById('syncBanner').textContent = '✅ 입장확인 모드 켜짐 — 배정된 좌석 클릭 시 즉시 입장 처리됩니다';
+        } else {
+            btn.innerText = '✅ 입장확인 모드: 켜기';
+            btn.style.boxShadow = '';
+            setSyncStatus('connected', '🟢 Firebase 실시간 연동 중 — 모든 변경사항이 자동으로 공유됩니다');
+        }
     };
 
     window.toggleBlockedSeat = async function(show, row, num) {
@@ -1745,6 +1764,32 @@
             div.innerHTML=`<span class="seat-num">${num}</span><span class="seat-name">${dn}</span>`;
             div.onclick=()=>{
                 if(isBlockedEditMode){toggleBlockedSeat(show,row,num);return;}
+                // ✅ 입장확인 모드: 즉시 입장 처리
+                if(isCheckInMode){
+                    db.seats[seatId].pickedUp=!db.seats[seatId].pickedUp;
+                    const nowChecked=db.seats[seatId].pickedUp, nm=db.seats[seatId].name;
+                    saveData();
+                    const bnr=document.getElementById('syncBanner');
+                    bnr.textContent=nowChecked?`✅ ${row}열 ${num}번 (${nm}) — 입장 처리됨`:`↩️ ${row}열 ${num}번 (${nm}) — 입장 취소됨`;
+                    setTimeout(()=>{ if(isCheckInMode) bnr.textContent='✅ 입장확인 모드 켜짐 — 배정된 좌석 클릭 시 즉시 입장 처리됩니다'; },2000);
+                    return;
+                }
+
+                // 입장확인 모드: 클릭 즉시 입장 처리 (토글)
+                if(isCheckInMode) {
+                    db.seats[seatId].pickedUp = !db.seats[seatId].pickedUp;
+                    const wasChecked = db.seats[seatId].pickedUp;
+                    saveData();
+                    // 간단한 피드백 (배너에 표시)
+                    const name = db.seats[seatId] ? db.seats[seatId].name : s.name;
+                    const msg = wasChecked ? `✅ ${row}열 ${num}번 — 입장 처리됨` : `↩️ ${row}열 ${num}번 — 입장 취소됨`;
+                    document.getElementById('syncBanner').textContent = msg;
+                    setTimeout(() => {
+                        if(isCheckInMode) document.getElementById('syncBanner').textContent = '✅ 입장확인 모드 켜짐 — 배정된 좌석 클릭 시 즉시 입장 처리됩니다';
+                    }, 1500);
+                    return;
+                }
+
                 const modal=document.getElementById('seatModal'), info=document.getElementById('modalSeatInfo');
                 const btnCI=document.getElementById('btnCheckIn'), btnC=document.getElementById('btnCancelSeat');
                 let total=0;
