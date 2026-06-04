@@ -1828,15 +1828,15 @@
             for(let i=1;i<=24;i++){
                 if((row==='L'||row==='M')&&i>=19) continue;
                 if(row==='M'&&i===17){
-                    // 휠체어석 (작은 표시) + 17번 좌석
+                    // 17번 일반 좌석 먼저
+                    rowDiv.appendChild(createSeat(show,'M',17));
+                    // 휠체어석 표시
                     const w=document.createElement('div');
                     w.className='wheelchair-space';
                     w.style.width='52px';
                     w.style.fontSize='9px';
                     w.innerHTML='♿ 휠체어';
                     rowDiv.appendChild(w);
-                    // 17번 일반 좌석
-                    rowDiv.appendChild(createSeat(show,'M',17));
                     continue;
                 }
                 if(row==='M'&&i===18){const g=document.createElement('div');g.className='aisle';rowDiv.appendChild(g);const b=document.createElement('div');b.className='booth-bottom';rowDiv.appendChild(b);continue;}
@@ -2573,15 +2573,15 @@ ${showtimeNames[newShow]}(으)로 변경하시겠습니까?`,
             for(let i=1;i<=24;i++){
                 if((row==='L'||row==='M')&&i>=19)continue;
                 if(row==='M'&&i===17){
-                    // 휠체어석 (작은 표시) + 17번 좌석
+                    // 17번 일반 좌석 먼저
+                    rowDiv.appendChild(createSeat(show,'M',17));
+                    // 휠체어석 표시
                     const w=document.createElement('div');
                     w.className='wheelchair-space';
                     w.style.width='52px';
                     w.style.fontSize='9px';
                     w.innerHTML='♿ 휠체어';
                     rowDiv.appendChild(w);
-                    // 17번 일반 좌석
-                    rowDiv.appendChild(createSeat(show,'M',17));
                     continue;
                 }
                 if(row==='M'&&i===18){const g=document.createElement('div');g.className='aisle';rowDiv.appendChild(g);const b=document.createElement('div');b.className='booth-bottom';rowDiv.appendChild(b);continue;}
