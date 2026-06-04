@@ -1191,7 +1191,7 @@
     // ============================================================
     // 전역 상태
     // ============================================================
-    const TOTAL_SEATS = 298;
+    const TOTAL_SEATS = 299;
     let isBlockedEditMode = false;
     let isCheckInMode = false; // 입장확인 모드
     let currentEditTarget = null;
@@ -1827,7 +1827,18 @@
             if(row==='M'){const d=document.createElement('div');d.className='entrance-door';d.innerHTML='🚪';d.title='주 출입구';rowDiv.appendChild(d);}
             for(let i=1;i<=24;i++){
                 if((row==='L'||row==='M')&&i>=19) continue;
-                if(row==='M'&&i===17){const w=document.createElement('div');w.className='wheelchair-space';w.innerHTML='♿ 휠체어석';rowDiv.appendChild(w);continue;}
+                if(row==='M'&&i===17){
+                    // 휠체어석 (작은 표시) + 17번 좌석
+                    const w=document.createElement('div');
+                    w.className='wheelchair-space';
+                    w.style.width='52px';
+                    w.style.fontSize='9px';
+                    w.innerHTML='♿ 휠체어';
+                    rowDiv.appendChild(w);
+                    // 17번 일반 좌석
+                    rowDiv.appendChild(createSeat(show,'M',17));
+                    continue;
+                }
                 if(row==='M'&&i===18){const g=document.createElement('div');g.className='aisle';rowDiv.appendChild(g);const b=document.createElement('div');b.className='booth-bottom';rowDiv.appendChild(b);continue;}
                 rowDiv.appendChild(createSeat(show,row,i));
                 if(i===6||i===18){const g=document.createElement('div');g.className='aisle';rowDiv.appendChild(g);}
@@ -2561,7 +2572,18 @@ ${showtimeNames[newShow]}(으)로 변경하시겠습니까?`,
             if(row==='M'){const d=document.createElement('div');d.className='entrance-door';d.innerHTML='🚪';d.title='주 출입구';rowDiv.appendChild(d);}
             for(let i=1;i<=24;i++){
                 if((row==='L'||row==='M')&&i>=19)continue;
-                if(row==='M'&&i===17){const w=document.createElement('div');w.className='wheelchair-space';w.innerHTML='♿ 휠체어석';rowDiv.appendChild(w);continue;}
+                if(row==='M'&&i===17){
+                    // 휠체어석 (작은 표시) + 17번 좌석
+                    const w=document.createElement('div');
+                    w.className='wheelchair-space';
+                    w.style.width='52px';
+                    w.style.fontSize='9px';
+                    w.innerHTML='♿ 휠체어';
+                    rowDiv.appendChild(w);
+                    // 17번 일반 좌석
+                    rowDiv.appendChild(createSeat(show,'M',17));
+                    continue;
+                }
                 if(row==='M'&&i===18){const g=document.createElement('div');g.className='aisle';rowDiv.appendChild(g);const b=document.createElement('div');b.className='booth-bottom';rowDiv.appendChild(b);continue;}
                 rowDiv.appendChild(createSeat(show,row,i));
                 if(i===6||i===18){const g=document.createElement('div');g.className='aisle';rowDiv.appendChild(g);}
