@@ -282,7 +282,7 @@
         .seat.checked .seat-name { color: white; }
         .booth-top { width: 231px; height: 30px; background: #34495e; color: #ecf0f1; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: bold; letter-spacing: 2px; border-radius: 6px 6px 0 0; margin-bottom: 0; position: relative; z-index: 2; box-shadow: inset 0 0 8px rgba(0,0,0,0.3); border: 1px solid #2c3e50; border-bottom: none; }
         .booth-bottom { width: 231px; height: 30px; background: #34495e; border-radius: 0 0 6px 6px; box-shadow: inset 0 0 8px rgba(0,0,0,0.3); border: 1px solid #2c3e50; border-top: none; }
-        .wheelchair-space { width: 39px; height: 30px; background: #e3f2fd; border: 1.5px dashed #1976d2; color: #1976d2; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 700; flex-shrink: 0; letter-spacing: -0.5px; }
+        .wheelchair-space { width: 36px; height: 30px; background: #e3f2fd; border: 1.5px dashed #1976d2; color: #1976d2; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 8px; font-weight: 700; flex-shrink: 0; letter-spacing: -0.5px; }
         .entrance-door { position: absolute; left: -40px; height: 26px; width: 28px; background: #27ae60; color: white; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 14px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); z-index: 5; cursor: help; }
 
         /* ==========================================
@@ -1191,7 +1191,7 @@
     // ============================================================
     // 전역 상태
     // ============================================================
-    const TOTAL_SEATS = 299;
+    const TOTAL_SEATS = 298;
     let isBlockedEditMode = false;
     let isCheckInMode = false; // 입장확인 모드
     let currentEditTarget = null;
@@ -1828,18 +1828,17 @@
             if(row==='M') {
                 // 출입문 아이콘
                 const d=document.createElement('div'); d.className='entrance-door'; d.innerHTML='🚪'; d.title='주 출입구'; rowDiv.appendChild(d);
-                // 좌구역: 1~6
-                for(let i=1;i<=6;i++) rowDiv.appendChild(createSeat(show,'M',i));
-                // 통로
-                const g1=document.createElement('div'); g1.className='aisle'; rowDiv.appendChild(g1);
-                // 중앙구역: 7~16
-                for(let i=7;i<=16;i++) rowDiv.appendChild(createSeat(show,'M',i));
-                // 통로 (i===18 위치에 맞춤)
-                const g2=document.createElement('div'); g2.className='aisle'; rowDiv.appendChild(g2);
-                // M-17 좌석
-                rowDiv.appendChild(createSeat(show,'M',17));
-                // 휠체어석 표시 (좌석 1칸 너비에 맞춤)
-                const w=document.createElement('div'); w.className='wheelchair-space'; w.innerHTML='♿'; rowDiv.appendChild(w);
+                // 다른 열과 동일하게 1~24 배열, 18번만 휠체어석으로 표시
+                for(let i=1;i<=24;i++){
+                    if(i>=19) break; // 19~24 없음
+                    if(i===18){
+                        // 18번 = 휠체어석 표시
+                        const w=document.createElement('div'); w.className='wheelchair-space'; w.innerHTML='♿ 휠체어'; rowDiv.appendChild(w);
+                    } else {
+                        rowDiv.appendChild(createSeat(show,'M',i));
+                    }
+                    if(i===6||i===18){const g=document.createElement('div');g.className='aisle';rowDiv.appendChild(g);}
+                }
                 // booth-bottom (L열 booth-top 아래)
                 const bb=document.createElement('div'); bb.className='booth-bottom'; rowDiv.appendChild(bb);
                 chartDiv.appendChild(rowDiv);
@@ -2594,12 +2593,17 @@ ${showtimeNames[newShow]}(으)로 변경하시겠습니까?`,
 
             if(row==='M'){
                 const d=document.createElement('div'); d.className='entrance-door'; d.innerHTML='🚪'; d.title='주 출입구'; rowDiv.appendChild(d);
+                // 좌구역: 1~6
                 for(let i=1;i<=6;i++) rowDiv.appendChild(createSeat(show,'M',i));
+                // 통로 (다른 열 6번 뒤와 동일)
                 const g1=document.createElement('div'); g1.className='aisle'; rowDiv.appendChild(g1);
-                for(let i=7;i<=16;i++) rowDiv.appendChild(createSeat(show,'M',i));
+                // 중앙구역: 7~17 (좌석)
+                for(let i=7;i<=17;i++) rowDiv.appendChild(createSeat(show,'M',i));
+                // 18번 자리에 휠체어석 표시 (다른 열 18번 위치와 동일)
+                const w=document.createElement('div'); w.className='wheelchair-space'; w.innerHTML='♿ 휠체어'; rowDiv.appendChild(w);
+                // 통로 (다른 열 18번 뒤 aisle과 동일)
                 const g2=document.createElement('div'); g2.className='aisle'; rowDiv.appendChild(g2);
-                rowDiv.appendChild(createSeat(show,'M',17));
-                const w=document.createElement('div'); w.className='wheelchair-space'; w.innerHTML='♿'; rowDiv.appendChild(w);
+                // 부스 하단 (우구역 자리)
                 const bb=document.createElement('div'); bb.className='booth-bottom'; rowDiv.appendChild(bb);
                 chartDiv.appendChild(rowDiv);
                 return;
