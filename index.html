@@ -280,9 +280,9 @@
         .seat-num { display: block; line-height: 1; }
         .seat-name { display: block; font-size: 8.5px; letter-spacing: -0.5px; white-space: nowrap; line-height: 1; margin-top: 2px; font-weight: bold; color: #d32f2f; }
         .seat.checked .seat-name { color: white; }
-        .booth-top { width: 231px; height: 34px; background: #34495e; color: #ecf0f1; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; letter-spacing: 2px; border-radius: 6px 6px 0 0; margin-bottom: -4px; position: relative; z-index: 2; box-shadow: inset 0 0 10px rgba(0,0,0,0.3); border: 1px solid #2c3e50; border-bottom: none; }
-        .booth-bottom { width: 231px; height: 30px; background: #34495e; border-radius: 0 0 6px 6px; box-shadow: inset 0 0 10px rgba(0,0,0,0.3); border: 1px solid #2c3e50; border-top: none; }
-        .wheelchair-space { width: 75px; height: 30px; background: #e3f2fd; border: 1.5px dashed #1976d2; color: #1976d2; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+        .booth-top { width: 231px; height: 30px; background: #34495e; color: #ecf0f1; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: bold; letter-spacing: 2px; border-radius: 6px 6px 0 0; margin-bottom: 0; position: relative; z-index: 2; box-shadow: inset 0 0 8px rgba(0,0,0,0.3); border: 1px solid #2c3e50; border-bottom: none; }
+        .booth-bottom { width: 231px; height: 30px; background: #34495e; border-radius: 0 0 6px 6px; box-shadow: inset 0 0 8px rgba(0,0,0,0.3); border: 1px solid #2c3e50; border-top: none; }
+        .wheelchair-space { width: 39px; height: 30px; background: #e3f2fd; border: 1.5px dashed #1976d2; color: #1976d2; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 700; flex-shrink: 0; letter-spacing: -0.5px; }
         .entrance-door { position: absolute; left: -40px; height: 26px; width: 28px; background: #27ae60; color: white; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 14px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); z-index: 5; cursor: help; }
 
         /* ==========================================
@@ -1824,25 +1824,47 @@
         'ABCDEFGHIJKLM'.split('').forEach(row => {
             const rowDiv=document.createElement('div'); rowDiv.className='seat-row';
             rowDiv.innerHTML='<div class="row-label">'+row+'</div>';
-            if(row==='M'){const d=document.createElement('div');d.className='entrance-door';d.innerHTML='🚪';d.title='주 출입구';rowDiv.appendChild(d);}
+
+            if(row==='M') {
+                // 출입문 아이콘
+                const d=document.createElement('div'); d.className='entrance-door'; d.innerHTML='🚪'; d.title='주 출입구'; rowDiv.appendChild(d);
+                // 좌구역: 1~6
+                for(let i=1;i<=6;i++) rowDiv.appendChild(createSeat(show,'M',i));
+                // 통로
+                const g1=document.createElement('div'); g1.className='aisle'; rowDiv.appendChild(g1);
+                // 중앙구역: 7~16
+                for(let i=7;i<=16;i++) rowDiv.appendChild(createSeat(show,'M',i));
+                // 통로 (i===18 위치에 맞춤)
+                const g2=document.createElement('div'); g2.className='aisle'; rowDiv.appendChild(g2);
+                // M-17 좌석
+                rowDiv.appendChild(createSeat(show,'M',17));
+                // 휠체어석 표시 (좌석 1칸 너비에 맞춤)
+                const w=document.createElement('div'); w.className='wheelchair-space'; w.innerHTML='♿'; rowDiv.appendChild(w);
+                // booth-bottom (L열 booth-top 아래)
+                const bb=document.createElement('div'); bb.className='booth-bottom'; rowDiv.appendChild(bb);
+                chartDiv.appendChild(rowDiv);
+                return;
+            }
+
+            if(row==='L') {
+                // 좌구역: 1~6
+                for(let i=1;i<=6;i++) rowDiv.appendChild(createSeat(show,'L',i));
+                // 통로
+                const g1=document.createElement('div'); g1.className='aisle'; rowDiv.appendChild(g1);
+                // 중앙구역: 7~18
+                for(let i=7;i<=18;i++) rowDiv.appendChild(createSeat(show,'L',i));
+                // 통로
+                const g2=document.createElement('div'); g2.className='aisle'; rowDiv.appendChild(g2);
+                // booth-top
+                const bt=document.createElement('div'); bt.className='booth-top'; bt.innerHTML='🎬 영상 시스템 부스'; rowDiv.appendChild(bt);
+                chartDiv.appendChild(rowDiv);
+                return;
+            }
+
+            // A~K열: 1~24 전체 (통로: 6번 뒤, 18번 뒤)
             for(let i=1;i<=24;i++){
-                if((row==='L'||row==='M')&&i>=19) continue;
-                if(row==='M'&&i===17){
-                    // 17번 일반 좌석 먼저
-                    rowDiv.appendChild(createSeat(show,'M',17));
-                    // 휠체어석 표시
-                    const w=document.createElement('div');
-                    w.className='wheelchair-space';
-                    w.style.width='52px';
-                    w.style.fontSize='9px';
-                    w.innerHTML='♿ 휠체어';
-                    rowDiv.appendChild(w);
-                    continue;
-                }
-                if(row==='M'&&i===18){const g=document.createElement('div');g.className='aisle';rowDiv.appendChild(g);const b=document.createElement('div');b.className='booth-bottom';rowDiv.appendChild(b);continue;}
                 rowDiv.appendChild(createSeat(show,row,i));
                 if(i===6||i===18){const g=document.createElement('div');g.className='aisle';rowDiv.appendChild(g);}
-                if(i===18&&row==='L'){const bt=document.createElement('div');bt.className='booth-top';bt.innerHTML='🎬 영상 시스템 부스';rowDiv.appendChild(bt);}
             }
             chartDiv.appendChild(rowDiv);
         });
@@ -2563,31 +2585,37 @@ ${showtimeNames[newShow]}(으)로 변경하시겠습니까?`,
             <div class="stat-card"><div class="stat-label">잔여좌석</div><div class="stat-val amber">${getUsableSeats(show)-reserved}</div></div>
             <div class="stat-card"><div class="stat-label">미배정/대기</div><div class="stat-val" style="font-size:13px;color:#d35400;">${pN}/${pO}</div></div>`;
 
-        // 좌석 배치도
+        // 좌석 배치도 (PC와 동일 구조)
         const chartDiv = document.getElementById('mob-seatingChart');
         chartDiv.innerHTML='';
         'ABCDEFGHIJKLM'.split('').forEach(row=>{
             const rowDiv=document.createElement('div'); rowDiv.className='seat-row';
             rowDiv.innerHTML='<div class="row-label">'+row+'</div>';
-            if(row==='M'){const d=document.createElement('div');d.className='entrance-door';d.innerHTML='🚪';d.title='주 출입구';rowDiv.appendChild(d);}
+
+            if(row==='M'){
+                const d=document.createElement('div'); d.className='entrance-door'; d.innerHTML='🚪'; d.title='주 출입구'; rowDiv.appendChild(d);
+                for(let i=1;i<=6;i++) rowDiv.appendChild(createSeat(show,'M',i));
+                const g1=document.createElement('div'); g1.className='aisle'; rowDiv.appendChild(g1);
+                for(let i=7;i<=16;i++) rowDiv.appendChild(createSeat(show,'M',i));
+                const g2=document.createElement('div'); g2.className='aisle'; rowDiv.appendChild(g2);
+                rowDiv.appendChild(createSeat(show,'M',17));
+                const w=document.createElement('div'); w.className='wheelchair-space'; w.innerHTML='♿'; rowDiv.appendChild(w);
+                const bb=document.createElement('div'); bb.className='booth-bottom'; rowDiv.appendChild(bb);
+                chartDiv.appendChild(rowDiv);
+                return;
+            }
+            if(row==='L'){
+                for(let i=1;i<=6;i++) rowDiv.appendChild(createSeat(show,'L',i));
+                const g1=document.createElement('div'); g1.className='aisle'; rowDiv.appendChild(g1);
+                for(let i=7;i<=18;i++) rowDiv.appendChild(createSeat(show,'L',i));
+                const g2=document.createElement('div'); g2.className='aisle'; rowDiv.appendChild(g2);
+                const bt=document.createElement('div'); bt.className='booth-top'; bt.innerHTML='🎬 영상 시스템 부스'; rowDiv.appendChild(bt);
+                chartDiv.appendChild(rowDiv);
+                return;
+            }
             for(let i=1;i<=24;i++){
-                if((row==='L'||row==='M')&&i>=19)continue;
-                if(row==='M'&&i===17){
-                    // 17번 일반 좌석 먼저
-                    rowDiv.appendChild(createSeat(show,'M',17));
-                    // 휠체어석 표시
-                    const w=document.createElement('div');
-                    w.className='wheelchair-space';
-                    w.style.width='52px';
-                    w.style.fontSize='9px';
-                    w.innerHTML='♿ 휠체어';
-                    rowDiv.appendChild(w);
-                    continue;
-                }
-                if(row==='M'&&i===18){const g=document.createElement('div');g.className='aisle';rowDiv.appendChild(g);const b=document.createElement('div');b.className='booth-bottom';rowDiv.appendChild(b);continue;}
                 rowDiv.appendChild(createSeat(show,row,i));
                 if(i===6||i===18){const g=document.createElement('div');g.className='aisle';rowDiv.appendChild(g);}
-                if(i===18&&row==='L'){const bt=document.createElement('div');bt.className='booth-top';bt.innerHTML='🎬 영상 시스템 부스';rowDiv.appendChild(bt);}
             }
             chartDiv.appendChild(rowDiv);
         });
