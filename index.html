@@ -1833,7 +1833,7 @@
                     if(i>=19) break; // 19~24 없음
                     if(i===18){
                         // 18번 = 휠체어석 표시
-                        const w=document.createElement('div'); w.className='wheelchair-space'; w.innerHTML='♿ 휠체어'; rowDiv.appendChild(w);
+                        const w=document.createElement('div'); w.className='wheelchair-space'; w.innerHTML='♿'; rowDiv.appendChild(w);
                     } else {
                         rowDiv.appendChild(createSeat(show,'M',i));
                     }
@@ -2600,7 +2600,7 @@ ${showtimeNames[newShow]}(으)로 변경하시겠습니까?`,
                 // 중앙구역: 7~17 (좌석)
                 for(let i=7;i<=17;i++) rowDiv.appendChild(createSeat(show,'M',i));
                 // 18번 자리에 휠체어석 표시 (다른 열 18번 위치와 동일)
-                const w=document.createElement('div'); w.className='wheelchair-space'; w.innerHTML='♿ 휠체어'; rowDiv.appendChild(w);
+                const w=document.createElement('div'); w.className='wheelchair-space'; w.innerHTML='♿'; rowDiv.appendChild(w);
                 // 통로 (다른 열 18번 뒤 aisle과 동일)
                 const g2=document.createElement('div'); g2.className='aisle'; rowDiv.appendChild(g2);
                 // 부스 하단 (우구역 자리)
